@@ -2,13 +2,15 @@
 swagger: "2.0"
 info:
   description: "LogCom Swagger documentation"
-  version: "1.0.19"
+  version: "1.0.21"
   title: "LogCom API"
   contact:
     name: "Bloodlab-dev"
     url: "https://bloodlab.org"
     email: "laborit@blutspende.de"
-host: "bloodlab:5100"
+  license:
+    name: "MIT"
+    url: "https://opensource.org/licenses/MIT"
 basePath: "/api"
 paths:
   /v1/audit-logs:
@@ -414,6 +416,10 @@ definitions:
         createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
   CreateAuditLogRequestDTO:
     type: "object"
+    required:
+    - "category"
+    - "serviceCreated"
+    - "subject"
     properties:
       category:
         type: "string"
@@ -455,6 +461,10 @@ definitions:
         description: "The short description of the change"
   CreateConsoleLogRequestDTO:
     type: "object"
+    required:
+    - "level"
+    - "message"
+    - "service"
     properties:
       createdAt:
         type: "string"

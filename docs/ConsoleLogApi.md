@@ -1,6 +1,6 @@
 # \ConsoleLogApi
 
-All URIs are relative to *https://bloodlab:5100/api*
+All URIs are relative to *https://localhost/api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
