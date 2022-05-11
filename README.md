@@ -2,7 +2,7 @@
 LogCom client and Swagger documentation
 
 ## Overview
-The API documentation can be found [**here**](api/README.md)
+The API documentation can be found [**here**](docs/README.md)
 
 ## Installation
 Put the package under your project folder and add the following in import:
