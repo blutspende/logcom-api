@@ -2,7 +2,7 @@
 swagger: "2.0"
 info:
   description: "LogCom Swagger documentation"
-  version: "1.0.31"
+  version: "1.0.32"
   title: "LogCom API"
   contact:
     name: "Bloodlab-dev"
