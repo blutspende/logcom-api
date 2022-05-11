@@ -12,6 +12,6 @@ Name | Type | Description | Notes
 **RequestId** | [***uuid.UUID**](uuid.UUID.md) | The request ID making dependent logs trackable | [optional] [default to null]
 **Service** | **string** | The service which sent the log | [optional] [default to null]
 
-[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+[[Back to Model list]](README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 
 

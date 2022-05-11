@@ -9,6 +9,6 @@ Name | Type | Description | Notes
 **OldValue** | **string** | The old value | [optional] [default to null]
 **Subject** | **string** | The short description of the change | [optional] [default to null]
 
-[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+[[Back to Model list]](README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 
 
