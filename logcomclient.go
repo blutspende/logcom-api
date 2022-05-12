@@ -112,8 +112,88 @@ func SendConsoleLogWithModel(ctx context.Context, model CreateConsoleLogRequestD
 	}
 
 	headers := configuration.HeaderProvider(ctx)
+	result, err := instance.ConsoleLogApi.CreateConsoleLogV1Int(ctx, model, requestConfigurer(ctx, headers))
+	if err != nil {
+		return err
+	}
 
-	result, err := instance.ConsoleLogApi.CreateConsoleLogV1Int(ctx, model, func(request *http.Request) {
+	if !isHTTPStatusSuccess(result.StatusCode) {
+		return errors.New(result.Status)
+	}
+
+	return nil
+}
+
+func SendAuditLogWithCreation(ctx context.Context, subject, newValue string) error {
+	return SendAuditLogWithModel(ctx, CreateAuditLogRequestDto{
+		Category: "CREATION",
+		NewValue: newValue,
+		Subject:  subject,
+	})
+}
+
+func SendAuditLogWithModification(ctx context.Context, subject, oldValue, newValue string) error {
+	return SendAuditLogWithModel(ctx, CreateAuditLogRequestDto{
+		Category: "MODIFICATION",
+		NewValue: newValue,
+		OldValue: oldValue,
+		Subject:  subject,
+	})
+}
+
+func SendAuditLogWithDeletion(ctx context.Context, subject, oldValue string) error {
+	return SendAuditLogWithModel(ctx, CreateAuditLogRequestDto{
+		Category: "DELETION",
+		OldValue: oldValue,
+		Subject:  subject,
+	})
+}
+
+func SendAuditLogWithModel(ctx context.Context, model CreateAuditLogRequestDto) error {
+	if ctx == context.TODO() || ctx == context.Background() {
+		return errors.New("context cannot be empty")
+	}
+
+	if !IsEnabled() {
+		internalLogger.Debug().Msg("LogCom is disabled")
+		return nil
+	}
+
+	if model.ServiceCreated == "" {
+		model.ServiceCreated = configuration.ServiceName
+	}
+
+	if model.ServiceAffected == "" {
+		model.ServiceAffected = configuration.ServiceName
+	}
+
+	if model.CreatedAt != nil {
+		now := time.Now().UTC()
+		model.CreatedAt = &now
+	} else {
+		now := time.Now().UTC()
+		model.CreatedAt = &now
+	}
+
+	headers := configuration.HeaderProvider(ctx)
+	result, err := instance.AuditLogApi.CreateAuditLogV1Int(ctx, model, requestConfigurer(ctx, headers))
+	if err != nil {
+		return err
+	}
+
+	if !isHTTPStatusSuccess(result.StatusCode) {
+		return errors.New(result.Status)
+	}
+
+	return nil
+}
+
+func isHTTPStatusSuccess(statusCode int) bool {
+	return statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices
+}
+
+func requestConfigurer(ctx context.Context, headers http.Header) requestConfigurerFunc {
+	return func(request *http.Request) {
 		requestID := headers.Get("X-Request-ID")
 		if requestID == "" {
 			if requestIDAsUUID, ok := ctx.Value("RequestID").(uuid.UUID); ok {
@@ -129,36 +209,5 @@ func SendConsoleLogWithModel(ctx context.Context, model CreateConsoleLogRequestD
 		if authorization != "" {
 			request.Header.Add("Authorization", authorization)
 		}
-	})
-	if err != nil {
-		return err
 	}
-
-	if !isHTTPStatusSuccess(result.StatusCode) {
-		return errors.New(result.Status)
-	}
-
-	return nil
-}
-
-func SendAuditLog(ctx context.Context, model CreateAuditLogRequestDto) error {
-	if !IsEnabled() {
-		internalLogger.Debug().Msg("LogCom is disabled")
-		return nil
-	}
-
-	result, err := instance.AuditLogApi.CreateAuditLogV1Int(ctx, model, NilRequestConfigurer)
-	if err != nil {
-		return err
-	}
-
-	if !isHTTPStatusSuccess(result.StatusCode) {
-		return errors.New(result.Status)
-	}
-
-	return nil
-}
-
-func isHTTPStatusSuccess(statusCode int) bool {
-	return statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices
 }
