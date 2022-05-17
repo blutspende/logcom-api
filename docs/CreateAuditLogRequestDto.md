@@ -13,7 +13,9 @@ Name | Type | Description | Notes
 **OldValue** | **string** | The old value | [optional] [default to null]
 **ServiceAffected** | **string** | The service which the change affects | [optional] [default to null]
 **ServiceCreated** | **string** | The service which created | [default to null]
-**Subject** | **string** | The short description of the change | [default to null]
+**Subject** | **string** | The subject of the change | [default to null]
+**SubjectName** | **string** | The name of the subject | [optional] [default to null]
+**SubjectPropertyName** | **string** | The property name of the subject | [optional] [default to null]
 
 [[Back to Model list]](README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

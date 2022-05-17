@@ -2,7 +2,7 @@
 swagger: "2.0"
 info:
   description: "LogCom Swagger documentation"
-  version: "1.0.34"
+  version: "1.0.35"
   title: "LogCom API"
   contact:
     name: "Bloodlab-dev"
@@ -216,6 +216,43 @@ securityDefinitions:
     name: "Authorization"
     in: "header"
 definitions:
+  AuditLogChangeDTO:
+    type: "object"
+    properties:
+      category:
+        type: "string"
+        description: "The category of the change"
+      id:
+        type: "string"
+        format: "uuid"
+        description: "The ID"
+      message:
+        type: "string"
+        description: "The message"
+      newValue:
+        type: "string"
+        description: "The new value"
+      oldValue:
+        type: "string"
+        description: "The old value"
+      subject:
+        type: "string"
+        description: "The short description of the change"
+      subjectName:
+        type: "string"
+        description: "The name of the subject"
+      subjectPropertyName:
+        type: "string"
+        description: "The property name of the subject"
+    example:
+      newValue: "newValue"
+      subjectPropertyName: "subjectPropertyName"
+      subject: "subject"
+      id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+      oldValue: "oldValue"
+      category: "category"
+      message: "message"
+      subjectName: "subjectName"
   AuditLogDTO:
     type: "object"
     properties:
@@ -234,6 +271,11 @@ definitions:
       createdByName:
         type: "string"
         description: "The user's name who created"
+      groupedChanges:
+        type: "array"
+        description: "The grouped changes"
+        items:
+          $ref: "#/definitions/AuditLogChangeDTO"
       id:
         type: "string"
         format: "uuid"
@@ -249,7 +291,7 @@ definitions:
         description: "The old value"
       requestId:
         type: "string"
-        description: "The service which the change affects"
+        description: "The request ID making dependent logs trackable"
       serviceAffected:
         type: "string"
         description: "The service which the change affects"
@@ -258,20 +300,45 @@ definitions:
         description: "The service which created"
       subject:
         type: "string"
-        description: "The short description of the change"
+        description: "The subject of the change"
+      subjectName:
+        type: "string"
+        description: "The name of the subject"
+      subjectPropertyName:
+        type: "string"
+        description: "The property name of the subject"
     example:
-      createdAt: "2000-01-23T04:56:07.000+00:00"
       createdByName: "createdByName"
       newValue: "newValue"
-      requestId: "requestId"
       subject: "subject"
+      message: "message"
+      createdAt: "2000-01-23T04:56:07.000+00:00"
+      subjectPropertyName: "subjectPropertyName"
+      requestId: "requestId"
+      groupedChanges:
+      - newValue: "newValue"
+        subjectPropertyName: "subjectPropertyName"
+        subject: "subject"
+        id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+        oldValue: "oldValue"
+        category: "category"
+        message: "message"
+        subjectName: "subjectName"
+      - newValue: "newValue"
+        subjectPropertyName: "subjectPropertyName"
+        subject: "subject"
+        id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+        oldValue: "oldValue"
+        category: "category"
+        message: "message"
+        subjectName: "subjectName"
       id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
       oldValue: "oldValue"
       category: "category"
-      message: "message"
       serviceAffected: "serviceAffected"
       createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
       serviceCreated: "serviceCreated"
+      subjectName: "subjectName"
   AuditLogListPageResponse:
     type: "object"
     properties:
@@ -302,30 +369,68 @@ definitions:
       currentPage: 1
       totalCount: 69
       items:
-      - createdAt: "2000-01-23T04:56:07.000+00:00"
-        createdByName: "createdByName"
+      - createdByName: "createdByName"
         newValue: "newValue"
-        requestId: "requestId"
         subject: "subject"
+        message: "message"
+        createdAt: "2000-01-23T04:56:07.000+00:00"
+        subjectPropertyName: "subjectPropertyName"
+        requestId: "requestId"
+        groupedChanges:
+        - newValue: "newValue"
+          subjectPropertyName: "subjectPropertyName"
+          subject: "subject"
+          id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+          oldValue: "oldValue"
+          category: "category"
+          message: "message"
+          subjectName: "subjectName"
+        - newValue: "newValue"
+          subjectPropertyName: "subjectPropertyName"
+          subject: "subject"
+          id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+          oldValue: "oldValue"
+          category: "category"
+          message: "message"
+          subjectName: "subjectName"
         id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         oldValue: "oldValue"
         category: "category"
-        message: "message"
         serviceAffected: "serviceAffected"
         createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         serviceCreated: "serviceCreated"
-      - createdAt: "2000-01-23T04:56:07.000+00:00"
-        createdByName: "createdByName"
+        subjectName: "subjectName"
+      - createdByName: "createdByName"
         newValue: "newValue"
-        requestId: "requestId"
         subject: "subject"
+        message: "message"
+        createdAt: "2000-01-23T04:56:07.000+00:00"
+        subjectPropertyName: "subjectPropertyName"
+        requestId: "requestId"
+        groupedChanges:
+        - newValue: "newValue"
+          subjectPropertyName: "subjectPropertyName"
+          subject: "subject"
+          id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+          oldValue: "oldValue"
+          category: "category"
+          message: "message"
+          subjectName: "subjectName"
+        - newValue: "newValue"
+          subjectPropertyName: "subjectPropertyName"
+          subject: "subject"
+          id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+          oldValue: "oldValue"
+          category: "category"
+          message: "message"
+          subjectName: "subjectName"
         id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         oldValue: "oldValue"
         category: "category"
-        message: "message"
         serviceAffected: "serviceAffected"
         createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         serviceCreated: "serviceCreated"
+        subjectName: "subjectName"
   ConsoleLogDTO:
     type: "object"
     properties:
@@ -458,7 +563,13 @@ definitions:
         description: "The service which created"
       subject:
         type: "string"
-        description: "The short description of the change"
+        description: "The subject of the change"
+      subjectName:
+        type: "string"
+        description: "The name of the subject"
+      subjectPropertyName:
+        type: "string"
+        description: "The property name of the subject"
   CreateConsoleLogRequestDTO:
     type: "object"
     required:
@@ -506,6 +617,12 @@ definitions:
       subject:
         type: "string"
         description: "The short description of the change"
+      subjectName:
+        type: "string"
+        description: "The name of the subject"
+      subjectPropertyName:
+        type: "string"
+        description: "The property name of the subject"
   model.HealthCheck:
     type: "object"
     properties:
