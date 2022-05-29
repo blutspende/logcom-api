@@ -3,12 +3,14 @@ package logcomapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
 
 	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom"
+	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom/log"
 	"github.com/google/uuid"
 )
 
@@ -26,16 +28,6 @@ type LogComConfiguration struct {
 }
 
 type HeaderProviderFunc func(ctx context.Context) http.Header
-
-type logComHook struct {
-	internalLogger zerolog.Logger
-}
-
-func (h logComHook) Run(e *zerolog.Event, ctx context.Context, level zerolog.Level, msg string) {
-	if err := SendConsoleLog(ctx, level, msg); err != nil {
-		h.internalLogger.Error().Err(err).Msg("Failed to send console log to LogCom")
-	}
-}
 
 func Init(config LogComConfiguration, logger *zerolog.Logger) {
 	if config.LogComURL == "" {
@@ -99,17 +91,7 @@ func SendConsoleLogWithModel(ctx context.Context, model CreateConsoleLogRequestD
 		return nil
 	}
 
-	if model.Service == "" {
-		model.Service = configuration.ServiceName
-	}
-
-	if model.CreatedAt != nil {
-		now := time.Now().UTC()
-		model.CreatedAt = &now
-	} else {
-		now := time.Now().UTC()
-		model.CreatedAt = &now
-	}
+	prepareConsoleLogRequestDTO(&model)
 
 	headers := configuration.HeaderProvider(ctx)
 	result, err := instance.ConsoleLogApi.CreateConsoleLogV1Int(ctx, model, requestConfigurer(ctx, headers))
@@ -124,32 +106,83 @@ func SendConsoleLogWithModel(ctx context.Context, model CreateConsoleLogRequestD
 	return nil
 }
 
-func SendAuditLogWithCreation(ctx context.Context, subject, newValue string) error {
-	return SendAuditLogWithModel(ctx, CreateAuditLogRequestDto{
-		Category: "CREATION",
-		NewValue: newValue,
-		Subject:  subject,
+func SendAuditLogWithCreation(ctx context.Context, subject string, newValue interface{}) error {
+	return SendAuditLogWithCreationForSubject(ctx, subject, "", newValue)
+}
+
+func SendAuditLogWithCreationForSubject(ctx context.Context, subject, subjectName string, newValue interface{}) error {
+	return SendAuditLog(ctx, CreateAuditLogRequestDto{
+		Category:    "CREATION",
+		NewValue:    fmt.Sprintf("%v", newValue),
+		Subject:     subject,
+		SubjectName: subjectName,
 	})
 }
 
-func SendAuditLogWithModification(ctx context.Context, subject, oldValue, newValue string) error {
-	return SendAuditLogWithModel(ctx, CreateAuditLogRequestDto{
+func SendAuditLogWithModification(ctx context.Context, subject string, oldValue, newValue interface{}) error {
+	return SendAuditLog(ctx, CreateAuditLogRequestDto{
 		Category: "MODIFICATION",
-		NewValue: newValue,
-		OldValue: oldValue,
+		NewValue: fmt.Sprintf("%v", newValue),
+		OldValue: fmt.Sprintf("%v", oldValue),
 		Subject:  subject,
 	})
 }
 
-func SendAuditLogWithDeletion(ctx context.Context, subject, oldValue string) error {
-	return SendAuditLogWithModel(ctx, CreateAuditLogRequestDto{
-		Category: "DELETION",
-		OldValue: oldValue,
-		Subject:  subject,
+func SendAuditLogWithModificationModelChanges(ctx context.Context, subject, subjectName string, changes []ModelChange) error {
+	dto := CreateAuditLogRequestDto{
+		Category:    "MODIFICATION",
+		Subject:     subject,
+		SubjectName: subjectName,
+	}
+
+	if changesCount := len(changes); changesCount > 1 {
+		changesDTO := make([]GroupedAuditLogChangesDto, changesCount)
+
+		for i, change := range changes {
+			changesDTO[i] = GroupedAuditLogChangesDto{
+				Category:            dto.Category,
+				NewValue:            fmt.Sprintf("%v", change.NewValue),
+				OldValue:            fmt.Sprintf("%v", change.OldValue),
+				Subject:             dto.Subject,
+				SubjectName:         dto.SubjectName,
+				SubjectPropertyName: change.PropertyName,
+			}
+		}
+
+		dto.GroupedChanges = changesDTO
+	} else if changesCount > 0 {
+		dto.NewValue = fmt.Sprintf("%v", changes[0].NewValue)
+		dto.OldValue = fmt.Sprintf("%v", changes[0].OldValue)
+		dto.SubjectPropertyName = changes[0].PropertyName
+	}
+
+	return SendAuditLog(ctx, dto)
+}
+
+func SendAuditLogWithModificationModelDiff(ctx context.Context, subject, subjectName string, oldModel, newModel interface{}) error {
+	changes, err := GetModelChanges(ctx, oldModel, newModel)
+	if err != nil {
+		log.Error().Msg("Failed to send audit log")
+		return err
+	}
+
+	return SendAuditLogWithModificationModelChanges(ctx, subject, subjectName, changes)
+}
+
+func SendAuditLogWithDeletion(ctx context.Context, subject string, oldValue interface{}) error {
+	return SendAuditLogWithDeletionForSubject(ctx, subject, "", oldValue)
+}
+
+func SendAuditLogWithDeletionForSubject(ctx context.Context, subject, subjectName string, oldValue interface{}) error {
+	return SendAuditLog(ctx, CreateAuditLogRequestDto{
+		Category:    "DELETION",
+		OldValue:    fmt.Sprintf("%v", oldValue),
+		Subject:     subject,
+		SubjectName: subjectName,
 	})
 }
 
-func SendAuditLogWithModel(ctx context.Context, model CreateAuditLogRequestDto) error {
+func SendAuditLog(ctx context.Context, model CreateAuditLogRequestDto) error {
 	if ctx == context.TODO() || ctx == context.Background() {
 		return errors.New("context cannot be empty")
 	}
@@ -159,21 +192,7 @@ func SendAuditLogWithModel(ctx context.Context, model CreateAuditLogRequestDto) 
 		return nil
 	}
 
-	if model.ServiceCreated == "" {
-		model.ServiceCreated = configuration.ServiceName
-	}
-
-	if model.ServiceAffected == "" {
-		model.ServiceAffected = configuration.ServiceName
-	}
-
-	if model.CreatedAt != nil {
-		now := time.Now().UTC()
-		model.CreatedAt = &now
-	} else {
-		now := time.Now().UTC()
-		model.CreatedAt = &now
-	}
+	prepareAuditLogRequestDTO(&model)
 
 	headers := configuration.HeaderProvider(ctx)
 	result, err := instance.AuditLogApi.CreateAuditLogV1Int(ctx, model, requestConfigurer(ctx, headers))
@@ -188,11 +207,15 @@ func SendAuditLogWithModel(ctx context.Context, model CreateAuditLogRequestDto) 
 	return nil
 }
 
+func SendAuditLogGroup(ctx context.Context, auditLogCollector *AuditLogCollector) error {
+	return SendAuditLog(ctx, auditLogCollector.get())
+}
+
 func isHTTPStatusSuccess(statusCode int) bool {
 	return statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices
 }
 
-func requestConfigurer(ctx context.Context, headers http.Header) requestConfigurerFunc {
+func requestConfigurer(ctx context.Context, headers http.Header) func(*http.Request) {
 	return func(request *http.Request) {
 		requestID := headers.Get("X-Request-ID")
 		if requestID == "" {
