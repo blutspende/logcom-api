@@ -2,7 +2,7 @@
 swagger: "2.0"
 info:
   description: "LogCom Swagger documentation"
-  version: "1.0.40"
+  version: "1.0.42"
   title: "LogCom API"
   contact:
     name: "Bloodlab-dev"
@@ -545,7 +545,7 @@ definitions:
         type: "array"
         description: "The grouped changes if there are many related ones"
         items:
-          $ref: "#/definitions/GroupedAuditLogChangesDTO"
+          $ref: "#/definitions/NewAuditLogChangeDTO"
       message:
         type: "string"
         description: "The message"
@@ -599,7 +599,7 @@ definitions:
       service:
         type: "string"
         description: "The service which sent the log"
-  GroupedAuditLogChangesDTO:
+  NewAuditLogChangeDTO:
     type: "object"
     properties:
       category:

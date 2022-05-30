@@ -1,4 +1,4 @@
-# GroupedAuditLogChangesDto
+# NewAuditLogChangeDto
 
 ## Properties
 Name | Type | Description | Notes

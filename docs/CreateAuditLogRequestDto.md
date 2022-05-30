@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 **CreatedAt** | [**time.Time**](time.Time.md) | The creation timestamp | [optional] [default to null]
 **CreatedById** | [***uuid.UUID**](uuid.UUID.md) | The user&#39;s ID who created | [optional] [default to null]
 **CreatedByName** | **string** | The user&#39;s name who created | [optional] [default to null]
-**GroupedChanges** | [**[]GroupedAuditLogChangesDto**](GroupedAuditLogChangesDTO.md) | The grouped changes if there are many related ones | [optional] [default to null]
+**GroupedChanges** | [**[]NewAuditLogChangeDto**](NewAuditLogChangeDTO.md) | The grouped changes if there are many related ones | [optional] [default to null]
 **Message** | **string** | The message | [optional] [default to null]
 **NewValue** | **string** | The new value | [optional] [default to null]
 **OldValue** | **string** | The old value | [optional] [default to null]

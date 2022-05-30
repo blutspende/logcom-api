@@ -3,7 +3,6 @@ package logcomapi
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -46,7 +45,7 @@ func (c *AuditLogCollector) AddCreation(subject string, newValue interface{}) {
 func (c *AuditLogCollector) AddCreationForSubject(subject, subjectName string, newValue interface{}) {
 	c.Add(CreateAuditLogRequestDto{
 		Category:    "CREATION",
-		NewValue:    fmt.Sprintf("%v", newValue),
+		NewValue:    stringify(newValue),
 		Subject:     subject,
 		SubjectName: subjectName,
 	})
@@ -98,14 +97,14 @@ func GetModelChanges(ctx context.Context, oldModel, newModel interface{}) ([]Mod
 }
 
 func (c *AuditLogCollector) get() CreateAuditLogRequestDto {
-	c.parentAuditLog.GroupedChanges = make([]GroupedAuditLogChangesDto, 0)
+	c.parentAuditLog.GroupedChanges = make([]NewAuditLogChangeDto, 0)
 	hasSameCategory := true
 	seenCategory := ""
 
 	for subjectAsKey, subjectNameGroupAsValue := range c.auditLogs {
 		for subjectNameAsKey, auditLogList := range subjectNameGroupAsValue {
 			for _, auditLog := range auditLogList {
-				c.parentAuditLog.GroupedChanges = append(c.parentAuditLog.GroupedChanges, GroupedAuditLogChangesDto{
+				c.parentAuditLog.GroupedChanges = append(c.parentAuditLog.GroupedChanges, NewAuditLogChangeDto{
 					Category:            auditLog.Category,
 					Message:             auditLog.Message,
 					NewValue:            auditLog.NewValue,

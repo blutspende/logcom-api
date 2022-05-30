@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"sync"
 	"time"
 
@@ -106,26 +107,36 @@ func SendConsoleLogWithModel(ctx context.Context, model CreateConsoleLogRequestD
 	return nil
 }
 
-func SendAuditLogWithCreation(ctx context.Context, subject string, newValue interface{}) error {
-	return SendAuditLogWithCreationForSubject(ctx, subject, "", newValue)
-}
-
-func SendAuditLogWithCreationForSubject(ctx context.Context, subject, subjectName string, newValue interface{}) error {
+func SendAuditLogWithCreation(ctx context.Context, subject, subjectName string, newValue interface{}) error {
+	if newValue == nil {
+		newValue = ""
+	}
 	return SendAuditLog(ctx, CreateAuditLogRequestDto{
 		Category:    "CREATION",
-		NewValue:    fmt.Sprintf("%v", newValue),
+		NewValue:    stringify(newValue),
 		Subject:     subject,
 		SubjectName: subjectName,
 	})
 }
 
-func SendAuditLogWithModification(ctx context.Context, subject string, oldValue, newValue interface{}) error {
-	return SendAuditLog(ctx, CreateAuditLogRequestDto{
-		Category: "MODIFICATION",
-		NewValue: fmt.Sprintf("%v", newValue),
-		OldValue: fmt.Sprintf("%v", oldValue),
-		Subject:  subject,
-	})
+func SendAuditLogWithModification(ctx context.Context, subject, subjectName string, oldValue, newValue interface{}) error {
+	if isPrimitiveType(oldValue) {
+		return SendAuditLog(ctx, CreateAuditLogRequestDto{
+			Category:    "MODIFICATION",
+			NewValue:    fmt.Sprintf("%v", newValue),
+			OldValue:    fmt.Sprintf("%v", oldValue),
+			Subject:     subject,
+			SubjectName: subjectName,
+		})
+	}
+
+	changes, err := GetModelChanges(ctx, oldValue, newValue)
+	if err != nil {
+		log.Error().Msg("Failed to send audit log")
+		return err
+	}
+
+	return SendAuditLogWithModificationModelChanges(ctx, subject, subjectName, changes)
 }
 
 func SendAuditLogWithModificationModelChanges(ctx context.Context, subject, subjectName string, changes []ModelChange) error {
@@ -136,13 +147,13 @@ func SendAuditLogWithModificationModelChanges(ctx context.Context, subject, subj
 	}
 
 	if changesCount := len(changes); changesCount > 1 {
-		changesDTO := make([]GroupedAuditLogChangesDto, changesCount)
+		changesDTO := make([]NewAuditLogChangeDto, changesCount)
 
 		for i, change := range changes {
-			changesDTO[i] = GroupedAuditLogChangesDto{
+			changesDTO[i] = NewAuditLogChangeDto{
 				Category:            dto.Category,
-				NewValue:            fmt.Sprintf("%v", change.NewValue),
-				OldValue:            fmt.Sprintf("%v", change.OldValue),
+				NewValue:            stringify(change.NewValue),
+				OldValue:            stringify(change.OldValue),
 				Subject:             dto.Subject,
 				SubjectName:         dto.SubjectName,
 				SubjectPropertyName: change.PropertyName,
@@ -151,32 +162,21 @@ func SendAuditLogWithModificationModelChanges(ctx context.Context, subject, subj
 
 		dto.GroupedChanges = changesDTO
 	} else if changesCount > 0 {
-		dto.NewValue = fmt.Sprintf("%v", changes[0].NewValue)
-		dto.OldValue = fmt.Sprintf("%v", changes[0].OldValue)
+		dto.NewValue = stringify(changes[0].NewValue)
+		dto.OldValue = stringify(changes[0].OldValue)
 		dto.SubjectPropertyName = changes[0].PropertyName
 	}
 
 	return SendAuditLog(ctx, dto)
 }
 
-func SendAuditLogWithModificationModelDiff(ctx context.Context, subject, subjectName string, oldModel, newModel interface{}) error {
-	changes, err := GetModelChanges(ctx, oldModel, newModel)
-	if err != nil {
-		log.Error().Msg("Failed to send audit log")
-		return err
+func SendAuditLogWithDeletion(ctx context.Context, subject, subjectName string, oldValue interface{}) error {
+	if oldValue == nil {
+		oldValue = ""
 	}
-
-	return SendAuditLogWithModificationModelChanges(ctx, subject, subjectName, changes)
-}
-
-func SendAuditLogWithDeletion(ctx context.Context, subject string, oldValue interface{}) error {
-	return SendAuditLogWithDeletionForSubject(ctx, subject, "", oldValue)
-}
-
-func SendAuditLogWithDeletionForSubject(ctx context.Context, subject, subjectName string, oldValue interface{}) error {
 	return SendAuditLog(ctx, CreateAuditLogRequestDto{
 		Category:    "DELETION",
-		OldValue:    fmt.Sprintf("%v", oldValue),
+		OldValue:    stringify(oldValue),
 		Subject:     subject,
 		SubjectName: subjectName,
 	})
@@ -188,7 +188,7 @@ func SendAuditLog(ctx context.Context, model CreateAuditLogRequestDto) error {
 	}
 
 	if !IsEnabled() {
-		internalLogger.Debug().Msg("LogCom is disabled")
+		internalLogger.Info().Msg("LogCom is disabled")
 		return nil
 	}
 
@@ -233,4 +233,17 @@ func requestConfigurer(ctx context.Context, headers http.Header) func(*http.Requ
 			request.Header.Add("Authorization", authorization)
 		}
 	}
+}
+
+func stringify(value interface{}) string {
+	if isPrimitiveType(value) {
+		return fmt.Sprintf("%v", value)
+	}
+
+	return fmt.Sprintf("%+v", value)
+}
+
+func isPrimitiveType(value interface{}) bool {
+	valueKind := reflect.TypeOf(value).Kind()
+	return ((valueKind < reflect.Array) && (valueKind > 0) && (valueKind != reflect.Uintptr)) || (valueKind == reflect.String)
 }
