@@ -63,12 +63,28 @@ func (c *AuditLogCollector) Add(model CreateAuditLogRequestDto) {
 	}
 }
 
-func GetModelChanges(ctx context.Context, oldModel, newModel interface{}) ([]ModelChange, error) {
+func GetModelChanges(ctx context.Context, oldModel, newModel interface{}, ignoredProperties ...string) ([]ModelChange, error) {
+	ignoredPropertySet := make(map[string]struct{}, len(ignoredProperties))
+	for i := range ignoredProperties {
+		ignoredPropertySet[ignoredProperties[i]] = struct{}{}
+	}
+
 	valueOfOldModel := reflect.ValueOf(oldModel)
 	typeOfOldModel := valueOfOldModel.Type()
-	fieldCountOfOldModel := valueOfOldModel.NumField()
+	kindOfOldModel := typeOfOldModel.Kind()
 	valueOfNewModel := reflect.ValueOf(newModel)
 	typeOfNewModel := valueOfNewModel.Type()
+	var fieldCountOfOldModel int
+
+	if kindOfOldModel == reflect.Ptr {
+		fieldCountOfOldModel = valueOfOldModel.Elem().NumField()
+	} else {
+		fieldCountOfOldModel = valueOfOldModel.NumField()
+	}
+
+	if kindOfOldModel == reflect.Func || kindOfOldModel == reflect.Chan {
+		return nil, errors.New("unsupported type: " + kindOfOldModel.String())
+	}
 
 	if typeOfOldModel != typeOfNewModel {
 		log.Fatal().MsgContext(ctx, "Old and new model have different types")
@@ -80,14 +96,36 @@ func GetModelChanges(ctx context.Context, oldModel, newModel interface{}) ([]Mod
 		if valueOfOldModel.Field(i).CanInterface() {
 			fieldNameOfOldModel := typeOfOldModel.Field(i).Name
 
-			realValueOfOldModel := valueOfOldModel.Field(i).Interface()
-			realValueOfNewModel := valueOfNewModel.FieldByName(fieldNameOfOldModel).Interface()
+			if _, ok := ignoredPropertySet[fieldNameOfOldModel]; ok {
+				continue
+			}
 
-			if realValueOfOldModel != realValueOfNewModel {
+			fieldOfOldModel := valueOfOldModel.Field(i)
+			valueOfOldModelField := fieldOfOldModel.Interface()
+			valueOfNewModelField := valueOfNewModel.FieldByName(fieldNameOfOldModel).Interface()
+
+			kindOfOldModelField := fieldOfOldModel.Kind()
+			if (kindOfOldModelField == reflect.Func) || (kindOfOldModelField == reflect.Chan) {
+				log.Warn().MsgfContext(ctx, "Unsupported type: ", kindOfOldModelField.String())
+				continue
+			}
+
+			if (kindOfOldModelField >= reflect.Array) && (kindOfOldModelField != reflect.String) {
+				if reflect.DeepEqual(valueOfOldModelField, valueOfNewModelField) {
+					changes = append(changes, ModelChange{
+						PropertyName: fieldNameOfOldModel,
+						OldValue:     valueOfOldModelField,
+						NewValue:     valueOfNewModelField,
+					})
+				}
+				continue
+			}
+
+			if valueOfOldModelField != valueOfNewModelField {
 				changes = append(changes, ModelChange{
 					PropertyName: fieldNameOfOldModel,
-					OldValue:     realValueOfOldModel,
-					NewValue:     realValueOfNewModel,
+					OldValue:     valueOfOldModelField,
+					NewValue:     valueOfNewModelField,
 				})
 			}
 		}

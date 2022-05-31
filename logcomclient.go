@@ -119,7 +119,7 @@ func SendAuditLogWithCreation(ctx context.Context, subject, subjectName string, 
 	})
 }
 
-func SendAuditLogWithModification(ctx context.Context, subject, subjectName string, oldValue, newValue interface{}) error {
+func SendAuditLogWithModification(ctx context.Context, subject, subjectName string, oldValue, newValue interface{}, ignoredProperties ...string) error {
 	if isPrimitiveType(oldValue) {
 		return SendAuditLog(ctx, CreateAuditLogRequestDto{
 			Category:    "MODIFICATION",
@@ -130,10 +130,15 @@ func SendAuditLogWithModification(ctx context.Context, subject, subjectName stri
 		})
 	}
 
-	changes, err := GetModelChanges(ctx, oldValue, newValue)
+	changes, err := GetModelChanges(ctx, oldValue, newValue, ignoredProperties...)
 	if err != nil {
-		log.Error().Msg("Failed to send audit log")
+		log.Error().MsgContext(ctx, "Failed to send audit log")
 		return err
+	}
+
+	if len(changes) < 1 {
+		log.Debug().MsgContext(ctx, "No changes")
+		return nil
 	}
 
 	return SendAuditLogWithModificationModelChanges(ctx, subject, subjectName, changes)
