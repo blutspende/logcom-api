@@ -24,10 +24,12 @@ type AuditLogCollector struct {
 	auditLogs      map[string]map[string][]CreateAuditLogRequestDto
 }
 
-func NewAuditLogCollector(subject, subjectName string) *AuditLogCollector {
+func NewAuditLogCollector(parentSubject, parentSubjectName string) *AuditLogCollector {
 	return &AuditLogCollector{
-		parentAuditLog: CreateAuditLogRequestDto{Subject: subject},
-		auditLogs:      make(map[string]map[string][]CreateAuditLogRequestDto, 0),
+		parentAuditLog: CreateAuditLogRequestDto{
+			Subject:     parentSubject,
+			SubjectName: parentSubjectName},
+		auditLogs: make(map[string]map[string][]CreateAuditLogRequestDto, 0),
 	}
 }
 
@@ -38,16 +40,31 @@ func NewAuditLogCollectorWithParent(parentAuditLog CreateAuditLogRequestDto) *Au
 	}
 }
 
-func (c *AuditLogCollector) AddCreation(subject string, newValue interface{}) {
-	c.AddCreationForSubject(subject, "", newValue)
-}
-
-func (c *AuditLogCollector) AddCreationForSubject(subject, subjectName string, newValue interface{}) {
+func (c *AuditLogCollector) AddCreation(itemSubject, itemSubjectName string, newValue interface{}) {
 	c.Add(CreateAuditLogRequestDto{
 		Category:    "CREATION",
 		NewValue:    stringify(newValue),
-		Subject:     subject,
-		SubjectName: subjectName,
+		Subject:     itemSubject,
+		SubjectName: itemSubjectName,
+	})
+}
+
+func (c *AuditLogCollector) AddModification(itemSubject, itemSubjectName string, oldValue, newValue interface{}) {
+	c.Add(CreateAuditLogRequestDto{
+		Category:    "MODIFICATION",
+		NewValue:    stringify(newValue),
+		OldValue:    stringify(oldValue),
+		Subject:     itemSubject,
+		SubjectName: itemSubjectName,
+	})
+}
+
+func (c *AuditLogCollector) AddDeletion(itemSubject, itemSubjectName string, oldValue interface{}) {
+	c.Add(CreateAuditLogRequestDto{
+		Category:    "DELETION",
+		OldValue:    stringify(oldValue),
+		Subject:     itemSubject,
+		SubjectName: itemSubjectName,
 	})
 }
 
