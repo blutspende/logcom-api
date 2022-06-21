@@ -2,6 +2,7 @@ package logcomapi
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -245,7 +246,12 @@ func stringify(value interface{}) string {
 		return fmt.Sprintf("%v", value)
 	}
 
-	return fmt.Sprintf("%+v", value)
+	jsonData, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Sprintf("%+v", value)
+	}
+
+	return string(jsonData)
 }
 
 func isPrimitiveType(value interface{}) bool {
