@@ -3,10 +3,10 @@ module github.com/DRK-Blutspende-BaWueHe/logcom-api
 go 1.18
 
 require (
-	github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom v1.26.3
+	github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom v1.27.0
 	github.com/antihax/optional v1.0.0
 	github.com/google/uuid v1.3.0
-	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c
+	golang.org/x/oauth2 v0.0.0-20221006150949-b44042a4b9c1
 )
 
 require (
