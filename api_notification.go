@@ -25,17 +25,17 @@ var (
 	_ context.Context
 )
 
-type AuditLogApiService service
+type NotificationApiService service
 
 /*
-AuditLogApiService Create audit log
-Creates a new audit log
+NotificationApiService Create notification
+Creates a new notification
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param model The audit log DTO
+ * @param model The notification DTO
 
 
 */
-func (a *AuditLogApiService) CreateAuditLogV1Int(ctx context.Context, model CreateAuditLogRequestDto, requestConfigurer requestConfigurerFunc) (*http.Response, error) {
+func (a *NotificationApiService) CreateNotificationV1(ctx context.Context, model CreateNotificationRequestDto, requestConfigurer requestConfigurerFunc) (*http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Post")
 		localVarPostBody   interface{}
@@ -45,7 +45,7 @@ func (a *AuditLogApiService) CreateAuditLogV1Int(ctx context.Context, model Crea
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/v1/int/audit-logs"
+	localVarPath := a.client.cfg.BasePath + "/v1/notifications"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -113,36 +113,36 @@ func (a *AuditLogApiService) CreateAuditLogV1Int(ctx context.Context, model Crea
 }
 
 /*
-AuditLogApiService Get audit logs
-Gets all audit log
+NotificationApiService Get notifications
+Gets all notification
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param page The desired page number
  * @param pageSize The desired number of items per page
- * @param optional nil or *AuditLogApiGetAuditLogsV1Opts - Optional Parameters:
+ * @param optional nil or *NotificationApiGetNotificationsV1Opts - Optional Parameters:
      * @param "SearchTerm" (optional.String) -  The search term
      * @param "Direction" (optional.String) -  The sorting direction
      * @param "Sort" (optional.String) -  The sorting parameter
 
-@return AuditLogListPageResponse
+@return NotificationListPageResponse
 */
 
-type AuditLogApiGetAuditLogsV1Opts struct { 
+type NotificationApiGetNotificationsV1Opts struct { 
 	SearchTerm optional.String
 	Direction optional.String
 	Sort optional.String
 }
 
-func (a *AuditLogApiService) GetAuditLogsV1(ctx context.Context, page int32, pageSize int32, localVarOptionals *AuditLogApiGetAuditLogsV1Opts, requestConfigurer requestConfigurerFunc) (AuditLogListPageResponse, *http.Response, error) {
+func (a *NotificationApiService) GetNotificationsV1(ctx context.Context, page int32, pageSize int32, localVarOptionals *NotificationApiGetNotificationsV1Opts, requestConfigurer requestConfigurerFunc) (NotificationListPageResponse, *http.Response, error) {
 	var (
 		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody   interface{}
 		localVarFileName   string
 		localVarFileBytes  []byte
-		localVarReturnValue AuditLogListPageResponse
+		localVarReturnValue NotificationListPageResponse
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/v1/audit-logs"
+	localVarPath := a.client.cfg.BasePath + "/v1/notifications"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -224,7 +224,7 @@ func (a *AuditLogApiService) GetAuditLogsV1(ctx context.Context, page int32, pag
 		}
 		
 		if localVarHttpResponse.StatusCode == 200 {
-			var v AuditLogListPageResponse
+			var v NotificationListPageResponse
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"));
 				if err != nil {
 					newErr.error = err.Error()

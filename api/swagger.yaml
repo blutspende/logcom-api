@@ -2,7 +2,7 @@
 swagger: "2.0"
 info:
   description: "LogCom Swagger documentation"
-  version: "1.0.60"
+  version: "1.0.61"
   title: "LogCom API"
   contact:
     name: "Bloodlab-dev"
@@ -200,6 +200,96 @@ paths:
         required: true
         schema:
           $ref: "#/definitions/CreateConsoleLogRequestDTO"
+        x-exportParamName: "Model"
+      security:
+      - BearerAuth: []
+      responses:
+        "204":
+          description: "No content"
+        "400":
+          description: "Bad request"
+        "500":
+          description: "Internal server error"
+  /v1/notifications:
+    get:
+      tags:
+      - "Notification"
+      summary: "Get notifications"
+      description: "Gets all notification"
+      operationId: "GetNotificationsV1"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "searchTerm"
+        in: "query"
+        description: "The search term"
+        required: false
+        type: "string"
+        x-exportParamName: "SearchTerm"
+        x-optionalDataType: "String"
+      - name: "direction"
+        in: "query"
+        description: "The sorting direction"
+        required: false
+        type: "string"
+        enum:
+        - "asc"
+        - "desc"
+        x-exportParamName: "Direction"
+        x-optionalDataType: "String"
+      - name: "page"
+        in: "query"
+        description: "The desired page number"
+        required: true
+        type: "integer"
+        default: 0
+        minimum: 0
+        x-exportParamName: "Page"
+      - name: "pageSize"
+        in: "query"
+        description: "The desired number of items per page"
+        required: true
+        type: "integer"
+        default: 25
+        minimum: 1
+        x-exportParamName: "PageSize"
+      - name: "sort"
+        in: "query"
+        description: "The sorting parameter"
+        required: false
+        type: "string"
+        x-exportParamName: "Sort"
+        x-optionalDataType: "String"
+      security:
+      - BearerAuth: []
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/NotificationListPageResponse"
+        "400":
+          description: "Bad request"
+        "401":
+          description: "Unauthorized"
+        "403":
+          description: "Forbidden"
+        "500":
+          description: "Internal server error"
+    post:
+      tags:
+      - "Notification"
+      summary: "Create notification"
+      description: "Creates a new notification"
+      operationId: "CreateNotificationV1"
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "model"
+        description: "The notification DTO"
+        required: true
+        schema:
+          $ref: "#/definitions/CreateNotificationRequestDTO"
         x-exportParamName: "Model"
       security:
       - BearerAuth: []
@@ -599,6 +689,32 @@ definitions:
       service:
         type: "string"
         description: "The service which sent the log"
+  CreateNotificationRequestDTO:
+    type: "object"
+    required:
+    - "message"
+    - "service"
+    properties:
+      createdAt:
+        type: "string"
+        format: "date-time"
+        description: "The log timestamp"
+      createdById:
+        type: "string"
+        format: "uuid"
+        description: "The user's ID who created"
+        x-nullable: true
+      createdByName:
+        type: "string"
+        description: "The user's name who created"
+      message:
+        type: "string"
+        description: "Level         *LogLevel     `json:\"level\" binding:\"required\"\
+          \ enums:\"-1,0,1,2,3,4,5\"`                                       // The\
+          \ log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3, Fatal=4, Panic=5)"
+      service:
+        type: "string"
+        description: "The service which sent the log"
   NewAuditLogChangeDTO:
     type: "object"
     properties:
@@ -623,6 +739,89 @@ definitions:
       subjectPropertyName:
         type: "string"
         description: "The property name of the subject"
+  NotificationDTO:
+    type: "object"
+    properties:
+      createdAt:
+        type: "string"
+        format: "date-time"
+        description: "The log timestamp"
+      createdById:
+        type: "string"
+        format: "uuid"
+        description: "The user's ID who created"
+        x-nullable: true
+      createdByName:
+        type: "string"
+        description: "The user's name who created"
+      id:
+        type: "string"
+        format: "uuid"
+        description: "The ID"
+      message:
+        type: "string"
+        description: "Level         LogLevel      `json:\"level\" enums:\"-1,0,1,2,3,4,5\"\
+          `                                           // The log level (Trace=-1,\
+          \ Debug=0, Info=1, Warning=2, Error=3, Fatal=4, Panic=5)"
+      requestId:
+        type: "string"
+        format: "uuid"
+        description: "The request ID making dependent logs trackable"
+      service:
+        type: "string"
+        description: "The service which sent the log"
+    example:
+      createdAt: "2000-01-23T04:56:07.000+00:00"
+      createdByName: "createdByName"
+      requestId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+      service: "service"
+      id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+      message: "message"
+      createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+  NotificationListPageResponse:
+    type: "object"
+    properties:
+      currentPage:
+        type: "integer"
+        example: 1
+        description: "The actual page number"
+      items:
+        type: "array"
+        description: "The items"
+        items:
+          $ref: "#/definitions/NotificationDTO"
+      pageSize:
+        type: "integer"
+        example: 50
+        description: "The number of items per page"
+      totalCount:
+        type: "integer"
+        example: 69
+        description: "The total count of items"
+      totalPages:
+        type: "integer"
+        example: 2
+        description: "The total pages"
+    example:
+      totalPages: 2
+      pageSize: 50
+      currentPage: 1
+      totalCount: 69
+      items:
+      - createdAt: "2000-01-23T04:56:07.000+00:00"
+        createdByName: "createdByName"
+        requestId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+        service: "service"
+        id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+        message: "message"
+        createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+      - createdAt: "2000-01-23T04:56:07.000+00:00"
+        createdByName: "createdByName"
+        requestId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+        service: "service"
+        id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+        message: "message"
+        createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
   model.HealthCheck:
     type: "object"
     properties:

@@ -10,11 +10,11 @@
 
 package logcomapi
 
-type ConsoleLogListPageResponse struct {
+type NotificationListPageResponse struct {
 	// The actual page number
 	CurrentPage int32 `json:"currentPage,omitempty"`
 	// The items
-	Items []ConsoleLogDto `json:"items,omitempty"`
+	Items []NotificationDto `json:"items,omitempty"`
 	// The number of items per page
 	PageSize int32 `json:"pageSize,omitempty"`
 	// The total count of items

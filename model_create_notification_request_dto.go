@@ -15,21 +15,15 @@ import (
 	"time"
 )
 
-type ConsoleLogDto struct {
+type CreateNotificationRequestDto struct {
 	// The log timestamp
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
 	// The user's ID who created
 	CreatedById *uuid.UUID `json:"createdById,omitempty"`
 	// The user's name who created
 	CreatedByName string `json:"createdByName,omitempty"`
-	// The ID
-	Id *uuid.UUID `json:"id,omitempty"`
-	// The log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3, Fatal=4, Panic=5)
-	Level int32 `json:"level,omitempty"`
-	// The log message
-	Message string `json:"message,omitempty"`
-	// The request ID making dependent logs trackable
-	RequestId *uuid.UUID `json:"requestId,omitempty"`
+	// Level         *LogLevel     `json:\"level\" binding:\"required\" enums:\"-1,0,1,2,3,4,5\"`                                       // The log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3, Fatal=4, Panic=5)
+	Message string `json:"message"`
 	// The service which sent the log
-	Service string `json:"service,omitempty"`
+	Service string `json:"service"`
 }
