@@ -10,8 +10,7 @@
 
 package logcomapi
 
-type ModelHealthCheck struct {
-	ApiVersion []string `json:"apiVersion,omitempty"`
-	Service string `json:"service,omitempty"`
+type UpdateNotificationMessageRequestDto struct {
+	// The status of the message (only the \"SEEN\" status is supported)
 	Status string `json:"status,omitempty"`
 }

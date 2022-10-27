@@ -2,7 +2,7 @@
 swagger: "2.0"
 info:
   description: "LogCom Swagger documentation"
-  version: "1.0.62"
+  version: "1.0.63"
   title: "LogCom API"
   contact:
     name: "Bloodlab-dev"
@@ -210,22 +210,35 @@ paths:
           description: "Bad request"
         "500":
           description: "Internal server error"
-  /v1/notifications:
+  /v1/notification-messages:
     get:
       tags:
       - "Notification"
-      summary: "Get notifications"
-      description: "Gets all notification"
-      operationId: "GetNotificationsV1"
+      summary: "Get notification messages"
+      description: "Gets all notification message"
+      operationId: "GetNotificationMessagesV1"
       produces:
       - "application/json"
       parameters:
-      - name: "searchTerm"
+      - name: "roles"
         in: "query"
-        description: "The search term"
+        required: false
+        type: "array"
+        items:
+          type: "string"
+        collectionFormat: "multi"
+        x-exportParamName: "Roles"
+      - name: "session"
+        in: "query"
         required: false
         type: "string"
-        x-exportParamName: "SearchTerm"
+        x-exportParamName: "Session"
+        x-optionalDataType: "String"
+      - name: "userId"
+        in: "query"
+        required: false
+        type: "string"
+        x-exportParamName: "UserId"
         x-optionalDataType: "String"
       - name: "direction"
         in: "query"
@@ -266,7 +279,7 @@ paths:
         "200":
           description: "OK"
           schema:
-            $ref: "#/definitions/NotificationListPageResponse"
+            $ref: "#/definitions/NotificationMessageListPageResponse"
         "400":
           description: "Bad request"
         "401":
@@ -275,6 +288,42 @@ paths:
           description: "Forbidden"
         "500":
           description: "Internal server error"
+  /v1/notification-messages/{id}:
+    patch:
+      tags:
+      - "Notification"
+      summary: "Update notification message"
+      description: "Updates a notification message by the optionally provided properties"
+      operationId: "UpdateNotificationMessageV1"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Message ID"
+        required: true
+        type: "string"
+        format: "uuid"
+        x-exportParamName: "Id"
+      - in: "body"
+        name: "model"
+        description: "The updated notification DTO"
+        required: true
+        schema:
+          $ref: "#/definitions/UpdateNotificationMessageRequestDTO"
+        x-exportParamName: "Model"
+      security:
+      - BearerAuth: []
+      responses:
+        "204":
+          description: "No content"
+        "400":
+          description: "Bad request"
+        "404":
+          description: "Not found"
+        "500":
+          description: "Internal server error"
+  /v1/notifications:
     post:
       tags:
       - "Notification"
@@ -707,14 +756,25 @@ definitions:
       createdByName:
         type: "string"
         description: "The user's name who created"
+      eventCategory:
+        type: "string"
+        description: "The notification event category"
+        default: "NOTIFICATION"
+        enum:
+        - "NOTIFICATION"
       message:
         type: "string"
-        description: "Level         *LogLevel     `json:\"level\" binding:\"required\"\
-          \ enums:\"-1,0,1,2,3,4,5\"`                                       // The\
-          \ log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3, Fatal=4, Panic=5)"
+        description: "The log message"
       service:
         type: "string"
         description: "The service which sent the log"
+      targets:
+        type: "object"
+        description: "The targets who will receive the notification"
+        additionalProperties:
+          type: "array"
+          items:
+            type: "string"
   NewAuditLogChangeDTO:
     type: "object"
     properties:
@@ -739,13 +799,13 @@ definitions:
       subjectPropertyName:
         type: "string"
         description: "The property name of the subject"
-  NotificationDTO:
+  NotificationMessageDTO:
     type: "object"
     properties:
       createdAt:
         type: "string"
         format: "date-time"
-        description: "The log timestamp"
+        description: "The notification timestamp"
       createdById:
         type: "string"
         format: "uuid"
@@ -760,25 +820,25 @@ definitions:
         description: "The ID"
       message:
         type: "string"
-        description: "Level         LogLevel      `json:\"level\" enums:\"-1,0,1,2,3,4,5\"\
-          `                                           // The log level (Trace=-1,\
-          \ Debug=0, Info=1, Warning=2, Error=3, Fatal=4, Panic=5)"
-      requestId:
-        type: "string"
-        format: "uuid"
-        description: "The request ID making dependent logs trackable"
+        description: "The notification message"
       service:
         type: "string"
-        description: "The service which sent the log"
+        description: "The service which sent the notification"
+      status:
+        type: "string"
+        description: "The status of the message"
+        enum:
+        - "SEEN"
+        - "SENT"
     example:
       createdAt: "2000-01-23T04:56:07.000+00:00"
       createdByName: "createdByName"
-      requestId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
       service: "service"
       id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
       message: "message"
       createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-  NotificationListPageResponse:
+      status: "SEEN"
+  NotificationMessageListPageResponse:
     type: "object"
     properties:
       currentPage:
@@ -789,7 +849,7 @@ definitions:
         type: "array"
         description: "The items"
         items:
-          $ref: "#/definitions/NotificationDTO"
+          $ref: "#/definitions/NotificationMessageDTO"
       pageSize:
         type: "integer"
         example: 50
@@ -810,18 +870,26 @@ definitions:
       items:
       - createdAt: "2000-01-23T04:56:07.000+00:00"
         createdByName: "createdByName"
-        requestId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         service: "service"
         id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         message: "message"
         createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+        status: "SEEN"
       - createdAt: "2000-01-23T04:56:07.000+00:00"
         createdByName: "createdByName"
-        requestId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         service: "service"
         id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         message: "message"
         createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
+        status: "SEEN"
+  UpdateNotificationMessageRequestDTO:
+    type: "object"
+    properties:
+      status:
+        type: "string"
+        description: "The status of the message (only the \"SEEN\" status is supported)"
+        enum:
+        - "SEEN"
   model.HealthCheck:
     type: "object"
     properties:
