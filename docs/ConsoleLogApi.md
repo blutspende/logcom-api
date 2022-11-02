@@ -58,7 +58,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
 
- **searchTerm** | **optional.String**| The search term | 
+ **search** | **optional.String**| The search term | 
  **direction** | **optional.String**| The sorting direction | 
  **sort** | **optional.String**| The sorting parameter | 
 

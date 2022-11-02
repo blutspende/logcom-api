@@ -59,9 +59,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
 
- **roles** | [**optional.Interface of []string**](string.md)|  | 
- **session** | **optional.String**|  | 
- **userId** | **optional.String**|  | 
+ **search** | **optional.String**| The search term | 
  **direction** | **optional.String**| The sorting direction | 
  **sort** | **optional.String**| The sorting parameter | 
 

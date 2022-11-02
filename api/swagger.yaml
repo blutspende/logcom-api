@@ -2,7 +2,7 @@
 swagger: "2.0"
 info:
   description: "LogCom Swagger documentation"
-  version: "1.0.72"
+  version: "1.0.73"
   title: "LogCom API"
   contact:
     name: "Bloodlab-dev"
@@ -23,12 +23,12 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "searchTerm"
+      - name: "search"
         in: "query"
         description: "The search term"
         required: false
         type: "string"
-        x-exportParamName: "SearchTerm"
+        x-exportParamName: "Search"
         x-optionalDataType: "String"
       - name: "direction"
         in: "query"
@@ -88,12 +88,12 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "searchTerm"
+      - name: "search"
         in: "query"
         description: "The search term"
         required: false
         type: "string"
-        x-exportParamName: "SearchTerm"
+        x-exportParamName: "Search"
         x-optionalDataType: "String"
       - name: "direction"
         in: "query"
@@ -220,25 +220,12 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "roles"
+      - name: "search"
         in: "query"
-        required: false
-        type: "array"
-        items:
-          type: "string"
-        collectionFormat: "multi"
-        x-exportParamName: "Roles"
-      - name: "session"
-        in: "query"
+        description: "The search term"
         required: false
         type: "string"
-        x-exportParamName: "Session"
-        x-optionalDataType: "String"
-      - name: "userId"
-        in: "query"
-        required: false
-        type: "string"
-        x-exportParamName: "UserId"
+        x-exportParamName: "Search"
         x-optionalDataType: "String"
       - name: "direction"
         in: "query"
