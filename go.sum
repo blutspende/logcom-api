@@ -1,5 +1,5 @@
-github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom v1.27.0 h1:1fIkV/ZXn3oMbkEhmmVYo7NnZrN4Ry+V18i16EPBT4Y=
-github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom v1.27.0/go.mod h1:dLmFaeNbQyMoVyOjqY/FYsj9NxqH+Y9714/vziBWHOA=
+github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom v1.28.0 h1:1qK8TQ208ZXHaIisHLnMYF543CNf8jBOJLelS18Aw6Y=
+github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom v1.28.0/go.mod h1:dLmFaeNbQyMoVyOjqY/FYsj9NxqH+Y9714/vziBWHOA=
 github.com/antihax/optional v1.0.0 h1:xK2lYat7ZLaVVcIuj82J8kIro4V6kDe0AUDFboUCwcg=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/coreos/go-systemd/v22 v22.3.3-0.20220203105225-a9a7ef127534/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=
