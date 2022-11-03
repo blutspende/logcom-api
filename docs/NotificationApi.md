@@ -6,6 +6,7 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**CreateNotificationV1**](NotificationApi.md#CreateNotificationV1) | **Post** /v1/notifications | Create notification
 [**GetNotificationMessagesV1**](NotificationApi.md#GetNotificationMessagesV1) | **Get** /v1/notification-messages | Get notification messages
+[**PeekNotificationMessagesV1**](NotificationApi.md#PeekNotificationMessagesV1) | **Get** /v1/notification-messages/peek | Peek notification messages
 [**UpdateNotificationMessageV1**](NotificationApi.md#UpdateNotificationMessageV1) | **Patch** /v1/notification-messages/{id} | Update notification message
 
 
@@ -62,6 +63,30 @@ Name | Type | Description  | Notes
  **filter** | **optional.String**| The search term | 
  **direction** | **optional.String**| The sorting direction | 
  **sort** | **optional.String**| The sorting parameter | 
+
+### Return type
+
+[**NotificationMessageListPageResponse**](NotificationMessageListPageResponse.md)
+
+### Authorization
+
+[BearerAuth](README.md#BearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **PeekNotificationMessagesV1**
+> NotificationMessageListPageResponse PeekNotificationMessagesV1(ctx, )
+Peek notification messages
+
+Gets portion of the notification messages
+
+### Required Parameters
+This endpoint does not need any parameter.
 
 ### Return type
 

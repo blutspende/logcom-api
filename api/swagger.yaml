@@ -2,7 +2,7 @@
 swagger: "2.0"
 info:
   description: "LogCom Swagger documentation"
-  version: "1.0.76"
+  version: "1.0.77"
   title: "LogCom API"
   contact:
     name: "Bloodlab-dev"
@@ -260,6 +260,31 @@ paths:
         type: "string"
         x-exportParamName: "Sort"
         x-optionalDataType: "String"
+      security:
+      - BearerAuth: []
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/NotificationMessageListPageResponse"
+        "400":
+          description: "Bad request"
+        "401":
+          description: "Unauthorized"
+        "403":
+          description: "Forbidden"
+        "500":
+          description: "Internal server error"
+  /v1/notification-messages/peek:
+    get:
+      tags:
+      - "Notification"
+      summary: "Peek notification messages"
+      description: "Gets portion of the notification messages"
+      operationId: "PeekNotificationMessagesV1"
+      produces:
+      - "application/json"
+      parameters: []
       security:
       - BearerAuth: []
       responses:
