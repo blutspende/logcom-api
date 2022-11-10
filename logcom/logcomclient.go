@@ -1,4 +1,4 @@
-package logcomapi
+package logcom
 
 import (
 	"context"
@@ -7,20 +7,22 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"reflect"
 	"sync"
 	"time"
 
+	"github.com/DRK-Blutspende-BaWueHe/logcom-api"
 	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom"
 	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom/log"
 	"github.com/google/uuid"
 )
 
 var (
-	configuration  LogComConfiguration
-	instance       *APIClient
-	internalLogger zerolog.Logger
-	once           sync.Once
+	configuration     LogComConfiguration
+	apiClientInstance *logcomapi.APIClient
+	internalLogger    zerolog.Logger
+	once              sync.Once
 )
 
 type LogComConfiguration struct {
@@ -31,16 +33,70 @@ type LogComConfiguration struct {
 
 type HeaderProviderFunc func(ctx context.Context) http.Header
 
+func init() {
+	internalLogger = log.Logger
+
+	logcomURL := os.Getenv("LOG_COM_URL")
+	if logcomURL == "" {
+		internalLogger.Error().Msg("LogCom URL is missing thus functionalities are not available")
+		return
+	}
+
+	config := LogComConfiguration{
+		ServiceName: "Unknown",
+		LogComURL:   logcomURL,
+		HeaderProvider: func(ctx context.Context) http.Header {
+			headers := make(map[string][]string, 0)
+
+			if authorization := ctx.Value("Authorization").(*string); authorization != nil || *authorization != "" {
+				headers["Authorization"] = []string{*authorization}
+			} else {
+				internalLogger.Warn().Msg("Authorization header not set")
+			}
+
+			if requestID := ctx.Value("X-Request-ID").(*string); requestID != nil || *requestID != "" {
+				headers["X-Request-ID"] = []string{*requestID}
+			} else {
+				internalLogger.Warn().Msg("X-Request-ID header not set")
+			}
+
+			return headers
+		},
+	}
+
+	configuration = config
+
+	logComAPIConfig := logcomapi.NewConfiguration()
+	logComAPIConfig.BasePath = configuration.LogComURL + "/api"
+	logComAPIConfig.Host = configuration.LogComURL
+
+	parsedUrl, err := url.Parse(configuration.LogComURL)
+	if err != nil {
+		internalLogger.Error().Msgf("Failed to get LogCom URL scheme, falling back to default (%s)", "https")
+
+		parsedUrl = &url.URL{
+			Scheme: "https",
+		}
+	}
+
+	logComAPIConfig.Scheme = parsedUrl.Scheme
+
+	apiClientInstance = logcomapi.NewAPIClient(logComAPIConfig)
+}
+
 func Init(config LogComConfiguration, logger *zerolog.Logger) {
 	if config.LogComURL == "" {
-		logger.Error().Msg("LogCom URL is missing thus functionalities are not available")
-		return
+		logcomURL := os.Getenv("LOG_COM_URL")
+		if logcomURL == "" {
+			log.Fatal().Msg("LogCom URL is missing")
+			return
+		}
 	}
 
 	once.Do(func() {
 		configuration = config
 
-		logComAPIConfig := NewConfiguration()
+		logComAPIConfig := logcomapi.NewConfiguration()
 		logComAPIConfig.BasePath = configuration.LogComURL + "/api"
 		logComAPIConfig.Host = configuration.LogComURL
 
@@ -65,24 +121,24 @@ func Init(config LogComConfiguration, logger *zerolog.Logger) {
 
 		logComAPIConfig.Scheme = parsedUrl.Scheme
 
-		instance = NewAPIClient(logComAPIConfig)
+		apiClientInstance = logcomapi.NewAPIClient(logComAPIConfig)
 		*logger = logger.Hook(logComHook{internalLogger: internalLogger})
 	})
 }
 
 func IsEnabled() bool {
-	return instance != nil
+	return apiClientInstance != nil
 }
 
 func SendConsoleLog(ctx context.Context, logLevel zerolog.Level, message string) error {
-	return SendConsoleLogWithModel(ctx, CreateConsoleLogRequestDto{
+	return SendConsoleLogWithModel(ctx, logcomapi.CreateConsoleLogRequestDto{
 		Level:   int32(logLevel),
 		Message: message,
 		Service: configuration.ServiceName,
 	})
 }
 
-func SendConsoleLogWithModel(ctx context.Context, model CreateConsoleLogRequestDto) error {
+func SendConsoleLogWithModel(ctx context.Context, model logcomapi.CreateConsoleLogRequestDto) error {
 	// Not LogCom intended log message
 	if ctx == context.TODO() || ctx == context.Background() {
 		return nil
@@ -96,7 +152,7 @@ func SendConsoleLogWithModel(ctx context.Context, model CreateConsoleLogRequestD
 	prepareConsoleLogRequestDTO(&model)
 
 	headers := configuration.HeaderProvider(ctx)
-	result, err := instance.ConsoleLogApi.CreateConsoleLogV1Int(ctx, model, requestConfigurer(ctx, headers))
+	result, err := apiClientInstance.ConsoleLogApi.CreateConsoleLogV1Int(ctx, model, requestConfigurer(ctx, headers))
 	if err != nil {
 		return err
 	}
@@ -112,7 +168,7 @@ func SendAuditLogWithCreation(ctx context.Context, subject, subjectName string, 
 	if newValue == nil {
 		newValue = ""
 	}
-	return SendAuditLog(ctx, CreateAuditLogRequestDto{
+	return SendAuditLog(ctx, logcomapi.CreateAuditLogRequestDto{
 		Category:    "CREATION",
 		NewValue:    stringify(newValue),
 		Subject:     subject,
@@ -122,7 +178,7 @@ func SendAuditLogWithCreation(ctx context.Context, subject, subjectName string, 
 
 func SendAuditLogWithModification(ctx context.Context, subject, subjectName string, oldValue, newValue interface{}, ignoredProperties ...string) error {
 	if isPrimitiveType(oldValue) {
-		return SendAuditLog(ctx, CreateAuditLogRequestDto{
+		return SendAuditLog(ctx, logcomapi.CreateAuditLogRequestDto{
 			Category:    "MODIFICATION",
 			NewValue:    fmt.Sprintf("%v", newValue),
 			OldValue:    fmt.Sprintf("%v", oldValue),
@@ -146,17 +202,17 @@ func SendAuditLogWithModification(ctx context.Context, subject, subjectName stri
 }
 
 func SendAuditLogWithModificationModelChanges(ctx context.Context, subject, subjectName string, changes []ModelChange) error {
-	dto := CreateAuditLogRequestDto{
+	dto := logcomapi.CreateAuditLogRequestDto{
 		Category:    "MODIFICATION",
 		Subject:     subject,
 		SubjectName: subjectName,
 	}
 
 	if changesCount := len(changes); changesCount > 1 {
-		changesDTO := make([]NewAuditLogChangeDto, changesCount)
+		changesDTO := make([]logcomapi.NewAuditLogChangeDto, changesCount)
 
 		for i, change := range changes {
-			changesDTO[i] = NewAuditLogChangeDto{
+			changesDTO[i] = logcomapi.NewAuditLogChangeDto{
 				Category:            dto.Category,
 				NewValue:            stringify(change.NewValue),
 				OldValue:            stringify(change.OldValue),
@@ -180,7 +236,7 @@ func SendAuditLogWithDeletion(ctx context.Context, subject, subjectName string, 
 	if oldValue == nil {
 		oldValue = ""
 	}
-	return SendAuditLog(ctx, CreateAuditLogRequestDto{
+	return SendAuditLog(ctx, logcomapi.CreateAuditLogRequestDto{
 		Category:    "DELETION",
 		OldValue:    stringify(oldValue),
 		Subject:     subject,
@@ -188,7 +244,7 @@ func SendAuditLogWithDeletion(ctx context.Context, subject, subjectName string, 
 	})
 }
 
-func SendAuditLog(ctx context.Context, model CreateAuditLogRequestDto) error {
+func SendAuditLog(ctx context.Context, model logcomapi.CreateAuditLogRequestDto) error {
 	if ctx == context.TODO() || ctx == context.Background() {
 		return errors.New("context cannot be empty")
 	}
@@ -201,7 +257,7 @@ func SendAuditLog(ctx context.Context, model CreateAuditLogRequestDto) error {
 	prepareAuditLogRequestDTO(&model)
 
 	headers := configuration.HeaderProvider(ctx)
-	result, err := instance.AuditLogApi.CreateAuditLogV1Int(ctx, model, requestConfigurer(ctx, headers))
+	result, err := apiClientInstance.AuditLogApi.CreateAuditLogV1Int(ctx, model, requestConfigurer(ctx, headers))
 	if err != nil {
 		return err
 	}
@@ -215,6 +271,36 @@ func SendAuditLog(ctx context.Context, model CreateAuditLogRequestDto) error {
 
 func SendAuditLogGroup(ctx context.Context, auditLogCollector *AuditLogCollector) error {
 	return SendAuditLog(ctx, auditLogCollector.get())
+}
+
+func SendNotification(ctx context.Context, eventCategory string, message string, targets map[string][]string) error {
+	return SendNotificationWithModel(ctx, logcomapi.CreateNotificationRequestDto{
+		EventCategory: eventCategory,
+		Message:       message,
+		Service:       configuration.ServiceName,
+		Targets:       targets,
+	})
+}
+
+func SendNotificationWithModel(ctx context.Context, model logcomapi.CreateNotificationRequestDto) error {
+	if !IsEnabled() {
+		internalLogger.Debug().Msg("LogCom is disabled")
+		return nil
+	}
+
+	prepareNotificationRequestDTO(&model)
+
+	headers := configuration.HeaderProvider(ctx)
+	result, err := apiClientInstance.NotificationApi.CreateNotificationV1(ctx, model, requestConfigurer(ctx, headers))
+	if err != nil {
+		return err
+	}
+
+	if !isHTTPStatusSuccess(result.StatusCode) {
+		return errors.New(result.Status)
+	}
+
+	return nil
 }
 
 func isHTTPStatusSuccess(statusCode int) bool {
@@ -257,4 +343,22 @@ func stringify(value interface{}) string {
 func isPrimitiveType(value interface{}) bool {
 	valueKind := reflect.TypeOf(value).Kind()
 	return ((valueKind < reflect.Array) && (valueKind > 0) && (valueKind != reflect.Uintptr)) || (valueKind == reflect.String)
+}
+
+func ensureConsoleLog(consoleLogPointer **consoleLog) {
+	if *consoleLogPointer == nil {
+		*consoleLogPointer = &consoleLog{}
+	}
+}
+
+func ensureNotification[T any](notificationPointer **notification[T]) {
+	if *notificationPointer == nil {
+		*notificationPointer = &notification[T]{}
+	}
+}
+
+func ensureHTTPHeaders(httpHeadersPointer *http.Header) {
+	if *httpHeadersPointer == nil {
+		*httpHeadersPointer = make(map[string][]string, 0)
+	}
 }

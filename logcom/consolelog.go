@@ -1,11 +1,21 @@
-package logcomapi
+package logcom
 
 import (
 	"context"
 	"time"
 
+	"github.com/DRK-Blutspende-BaWueHe/logcom-api"
 	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom"
 )
+
+type ConsoleLog interface {
+}
+
+type consoleLog struct {
+	ctx      context.Context
+	logLevel zerolog.Level
+	message  string
+}
 
 type logComHook struct {
 	internalLogger zerolog.Logger
@@ -17,7 +27,7 @@ func (h logComHook) Run(e *zerolog.Event, ctx context.Context, level zerolog.Lev
 	}
 }
 
-func prepareConsoleLogRequestDTO(dto *CreateConsoleLogRequestDto) {
+func prepareConsoleLogRequestDTO(dto *logcomapi.CreateConsoleLogRequestDto) {
 	if dto.Service == "" {
 		dto.Service = configuration.ServiceName
 	}
