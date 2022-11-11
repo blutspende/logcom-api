@@ -5,9 +5,8 @@ LogCom client and Swagger documentation
 The API documentation can be found [**here**](docs/README.md)
 
 ## Installation
-Put the package under your project folder and add the following in import:
 ```go
-import "github.com/DRK-Blutspende-BaWueHe/logcom-api"
+go get -v github.com/DRK-Blutspende-BaWueHe/logcom-api
 ```
 
 ## Usage
