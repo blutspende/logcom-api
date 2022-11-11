@@ -5,7 +5,7 @@ LogCom client and Swagger documentation
 The API documentation can be found [**here**](docs/README.md)
 
 ## Installation
-```go
+```
 go get -v github.com/DRK-Blutspende-BaWueHe/logcom-api
 ```
 
