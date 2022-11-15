@@ -15,7 +15,6 @@ import (
 type NotificationAction interface {
 	AndLog(logLevel zerolog.Level, message string) NotificationAction
 	Send() error
-	SendMessage(message string) error
 }
 
 type NotificationInitializer interface {
@@ -45,8 +44,8 @@ type notification[T any] struct {
 	consoleLog    *consoleLog
 }
 
-func Notify() NotificationConfigurer[NotificationAction] {
-	return &notification[NotificationAction]{
+func Notify() NotificationConfigurer[NotificationInitializer] {
+	return &notification[NotificationInitializer]{
 		eventCategory: "NOTIFICATION",
 	}
 }
@@ -89,11 +88,6 @@ func (n *notification[T]) Send() error {
 	}
 
 	return nil
-}
-
-func (n *notification[T]) SendMessage(message string) error {
-	n.message = message
-	return n.Send()
 }
 
 func (n *notification[T]) WithClientSecret(secret string) NotificationAction {

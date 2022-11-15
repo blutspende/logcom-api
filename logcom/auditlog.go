@@ -29,7 +29,7 @@ var batchedOperationList = []int{
 }
 
 type AuditLogAction interface {
-	IgnoreChangeOf(propertyName string) AuditLogAction
+	IgnoreChangeOf(propertyNames ...string) AuditLogAction
 	AndNotify() NotificationConfigurer[AuditLogAction]
 	AndLog(logLevel zerolog.Level, message string) AuditLogAction
 	OnFailure(onErrorCallback func(error)) AuditLogAction
@@ -48,23 +48,23 @@ type AuditLogOperation interface {
 	BatchDelete(subject string) BatchedAuditLogOperation
 	BatchModify(subject string) BatchedAuditLogOperation
 	Create(subject, subjectName string, newValue interface{}) AuditLogConfiguration
+	Modify(subject, subjectName string, oldValue, newValue interface{}) AuditLogConfiguration
 	Delete(subject, subjectName string, oldValue interface{}) AuditLogConfiguration
-	Modify(subject, subjectName string, oldValue interface{}, newValue interface{}) AuditLogConfiguration
 	GroupedModify(subject, subjectName string) GroupedModificationAuditLogOperation
 }
 
 type BatchedAuditLogOperation interface {
 	AuditLogConfiguration
 	CreateItem(subjectName string, newValue interface{}) BatchedAuditLogOperation
+	ModifyItem(subjectName string, oldValue, newValue interface{}) BatchedAuditLogOperation
 	DeleteItem(subjectName string, oldValue interface{}) BatchedAuditLogOperation
-	ModifyItem(subjectName string, oldValue interface{}, newValue interface{}) BatchedAuditLogOperation
 }
 
 type GroupedModificationAuditLogOperation interface {
 	AuditLogConfiguration
 	AddCreation(subject, subjectName string, newValue interface{}) GroupedModificationAuditLogOperation
+	AddModification(subject, subjectName string, oldValue, newValue interface{}) GroupedModificationAuditLogOperation
 	AddDeletion(subject, subjectName string, oldValue interface{}) GroupedModificationAuditLogOperation
-	AddModification(subject, subjectName string, oldValue interface{}, newValue interface{}) GroupedModificationAuditLogOperation
 }
 
 type AuditLogModelDiff interface {
@@ -264,9 +264,9 @@ func (al *auditLog[T]) GroupedModify(subject, subjectName string) GroupedModific
 	return al
 }
 
-func (al *auditLog[T]) IgnoreChangeOf(propertyName string) AuditLogAction {
+func (al *auditLog[T]) IgnoreChangeOf(propertyNames ...string) AuditLogAction {
 	al.ensureIgnoredProperties()
-	al.ignoredProperties = append(al.ignoredProperties, propertyName)
+	al.ignoredProperties = append(al.ignoredProperties, propertyNames...)
 	return al
 }
 
