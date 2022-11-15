@@ -273,6 +273,15 @@ func SendAuditLogGroup(ctx context.Context, auditLogCollector *AuditLogCollector
 	return SendAuditLog(ctx, auditLogCollector.get())
 }
 
+func sendAuditLogGroup[T](ctx context.Context, auditLog *auditLog[T], auditLogCollector *AuditLogCollector) error {
+	auditLogCollector.parentAuditLog = logcomapi.CreateAuditLogRequestDto{
+		Category:    auditLog.operation,
+		Subject:     auditLog.subject,
+		SubjectName: auditLog.subjectName,
+	}
+	return SendAuditLog(ctx, auditLogCollector.get())
+}
+
 func SendNotification(ctx context.Context, eventCategory string, message string, targets map[string][]string) error {
 	return SendNotificationWithModel(ctx, logcomapi.CreateNotificationRequestDto{
 		EventCategory: eventCategory,

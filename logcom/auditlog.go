@@ -14,27 +14,57 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	batchedCreation = iota
+	batchedModification
+	batchedDeletion
+	batchedSubjectModification
+)
+
+var batchedOperationList = []int{
+	batchedDeletion,
+	batchedModification,
+	batchedDeletion,
+	batchedSubjectModification,
+}
+
 type AuditLogAction interface {
 	IgnoreChangeOf(propertyName string) AuditLogAction
 	AndNotify() NotificationConfigurer[AuditLogAction]
-	AndNotifyRoles(targets ...string) AuditLogAction
-	AndNotifySessions(targets ...string) AuditLogAction
-	AndNotifyUsers(targets ...string) AuditLogAction
 	AndLog(logLevel zerolog.Level, message string) AuditLogAction
+	OnFailure(onErrorCallback func(error)) AuditLogAction
 	Send() error
 }
 
-type AuditLogInitializer interface {
+type AuditLogConfiguration interface {
 	WithClientSecret(secret string) AuditLogAction
 	WithBearerAuthorization(bearerToken string) AuditLogAction
 	WithContext(ctx context.Context) AuditLogAction
-	WithTransactionID(transactionID uuid.UUID) AuditLogInitializer
+	WithTransactionID(transactionID uuid.UUID) AuditLogConfiguration
 }
 
 type AuditLogOperation interface {
-	Create(subject, subjectName string, newValue interface{}) AuditLogInitializer
-	Delete(subject, subjectName string, oldValue interface{}) AuditLogInitializer
-	Modify(subject, subjectName string, oldValue interface{}, newValue interface{}) AuditLogInitializer
+	BatchCreate(subject string) BatchedAuditLogOperation
+	BatchDelete(subject string) BatchedAuditLogOperation
+	BatchModify(subject string) BatchedAuditLogOperation
+	Create(subject, subjectName string, newValue interface{}) AuditLogConfiguration
+	Delete(subject, subjectName string, oldValue interface{}) AuditLogConfiguration
+	Modify(subject, subjectName string, oldValue interface{}, newValue interface{}) AuditLogConfiguration
+	GroupedModify(subject, subjectName string) GroupedModificationAuditLogOperation
+}
+
+type BatchedAuditLogOperation interface {
+	AuditLogConfiguration
+	CreateItem(subjectName string, newValue interface{}) BatchedAuditLogOperation
+	DeleteItem(subjectName string, oldValue interface{}) BatchedAuditLogOperation
+	ModifyItem(subjectName string, oldValue interface{}, newValue interface{}) BatchedAuditLogOperation
+}
+
+type GroupedModificationAuditLogOperation interface {
+	AuditLogConfiguration
+	AddCreation(subject, subjectName string, newValue interface{}) GroupedModificationAuditLogOperation
+	AddDeletion(subject, subjectName string, oldValue interface{}) GroupedModificationAuditLogOperation
+	AddModification(subject, subjectName string, oldValue interface{}, newValue interface{}) GroupedModificationAuditLogOperation
 }
 
 type AuditLogModelDiff interface {
@@ -53,23 +83,25 @@ type AuditLogCollector struct {
 }
 
 type auditLog[T any] struct {
-	ctx               context.Context
-	operation         string
-	newValue          interface{}
-	oldValue          interface{}
-	subject           string
-	subjectName       string
-	ignoredProperties []string
-	httpHeaders       http.Header
-	consoleLog        *consoleLog
-	notification      *notification[T]
+	ctx                context.Context
+	operation          string
+	newValue           interface{}
+	oldValue           interface{}
+	subject            string
+	subjectName        string
+	ignoredProperties  []string
+	httpHeaders        http.Header
+	consoleLog         *consoleLog
+	notification       *notification[T]
+	batchedAuditLogMap map[int]*AuditLogCollector
+	sendError          error
 }
 
 func Audit() AuditLogOperation {
 	return &auditLog[AuditLogAction]{}
 }
 
-func AuditCreation(subject, subjectName string, newValue interface{}) AuditLogInitializer {
+func AuditCreation(subject, subjectName string, newValue interface{}) AuditLogConfiguration {
 	return &auditLog[AuditLogAction]{
 		operation:   "CREATION",
 		newValue:    newValue,
@@ -78,7 +110,7 @@ func AuditCreation(subject, subjectName string, newValue interface{}) AuditLogIn
 	}
 }
 
-func AuditModification(subject, subjectName string, oldValue, newValue interface{}) AuditLogInitializer {
+func AuditModification(subject, subjectName string, oldValue, newValue interface{}) AuditLogConfiguration {
 	return &auditLog[AuditLogAction]{
 		operation:   "MODIFICATION",
 		oldValue:    oldValue,
@@ -88,7 +120,7 @@ func AuditModification(subject, subjectName string, oldValue, newValue interface
 	}
 }
 
-func AuditDeletion(subject, subjectName string, oldValue interface{}) AuditLogInitializer {
+func AuditDeletion(subject, subjectName string, oldValue interface{}) AuditLogConfiguration {
 	return &auditLog[AuditLogAction]{
 		operation:   "DELETION",
 		oldValue:    oldValue,
@@ -110,6 +142,12 @@ func NewAuditLogCollectorWithParent(parentAuditLog logcomapi.CreateAuditLogReque
 	return &AuditLogCollector{
 		parentAuditLog: parentAuditLog,
 		auditLogs:      make(map[string]map[string][]logcomapi.CreateAuditLogRequestDto, 0),
+	}
+}
+
+func newAuditLogCollector() *AuditLogCollector {
+	return &AuditLogCollector{
+		auditLogs: make(map[string]map[string][]logcomapi.CreateAuditLogRequestDto, 0),
 	}
 }
 
@@ -202,6 +240,30 @@ func prepareAuditLogRequestDTO(dto *logcomapi.CreateAuditLogRequestDto) {
 	}
 }
 
+func (al *auditLog[T]) BatchCreate(subject string) BatchedAuditLogOperation {
+	al.operation = "CREATION"
+	al.subject = subject
+	return al
+}
+
+func (al *auditLog[T]) BatchModify(subject string) BatchedAuditLogOperation {
+	al.operation = "MODIFICATION"
+	al.subject = subject
+	return al
+}
+
+func (al *auditLog[T]) BatchDelete(subject string) BatchedAuditLogOperation {
+	al.operation = "DELETION"
+	al.subject = subject
+	return al
+}
+
+func (al *auditLog[T]) GroupedModify(subject, subjectName string) GroupedModificationAuditLogOperation {
+	al.batchedAuditLogMap = make(map[int]*AuditLogCollector, 0)
+	al.batchedAuditLogMap[batchedSubjectModification] = NewAuditLogCollector(subject, subjectName)
+	return al
+}
+
 func (al *auditLog[T]) IgnoreChangeOf(propertyName string) AuditLogAction {
 	al.ensureIgnoredProperties()
 	al.ignoredProperties = append(al.ignoredProperties, propertyName)
@@ -212,24 +274,6 @@ func (al *auditLog[T]) AndNotify() NotificationConfigurer[AuditLogAction] {
 	ensureNotification(&al.notification)
 	al.notification.eventCategory = "NOTIFICATION"
 	return interface{}(al).(NotificationConfigurer[AuditLogAction])
-}
-
-func (al *auditLog[T]) AndNotifyRoles(targets ...string) AuditLogAction {
-	ensureNotification(&al.notification)
-	al.notification.Roles(targets...)
-	return al
-}
-
-func (al *auditLog[T]) AndNotifySessions(targets ...string) AuditLogAction {
-	ensureNotification(&al.notification)
-	al.notification.Sessions(targets...)
-	return al
-}
-
-func (al *auditLog[T]) AndNotifyUsers(targets ...string) AuditLogAction {
-	ensureNotification(&al.notification)
-	al.notification.Users(targets...)
-	return al
 }
 
 func (al *auditLog[T]) AndLog(logLevel zerolog.Level, message string) AuditLogAction {
@@ -259,46 +303,69 @@ func (al *auditLog[T]) WithContext(ctx context.Context) AuditLogAction {
 	return al
 }
 
-func (al *auditLog[T]) WithTransactionID(transactionID uuid.UUID) AuditLogInitializer {
+func (al *auditLog[T]) WithTransactionID(transactionID uuid.UUID) AuditLogConfiguration {
 	ensureHTTPHeaders(&al.httpHeaders)
 	al.httpHeaders["X-Request-ID"] = []string{transactionID.String()}
+	return al
+}
+
+func (al *auditLog[T]) OnFailure(onErrorCallback func(error)) AuditLogAction {
+	onErrorCallback(al.sendError)
 	return al
 }
 
 func (al *auditLog[T]) Send() error {
 	var err error
 
-	switch al.operation {
-	case "CREATION":
-		err = SendAuditLogWithCreation(al.ctx, al.subject, al.subjectName, al.newValue)
-	case "MODIFICATION":
-		err = SendAuditLogWithModification(al.ctx, al.subject, al.subjectName, al.oldValue, al.newValue, al.ignoredProperties...)
-	case "DELETION":
-		err = SendAuditLogWithDeletion(al.ctx, al.subject, al.subjectName, al.oldValue)
-	default:
-		return errors.New("invalid audit operation: " + al.operation)
+	var isBatch bool
+	for _, operation := range batchedOperationList {
+		if al.batchedAuditLogMap[operation] != nil && len(al.batchedAuditLogMap[operation].auditLogs) > 0 {
+			err = sendAuditLogGroup(al.ctx, al, al.batchedAuditLogMap[operation])
+			if err != nil {
+				log.Error().Msg("Failed to send batched audit logs")
+				al.sendError = err
+				return err
+			}
+			isBatch = true
+		}
 	}
 
-	if err != nil {
-		log.Error().Msg("Failed to send audit log")
-		return err
+	if !isBatch {
+		switch al.operation {
+		case "CREATION":
+			err = SendAuditLogWithCreation(al.ctx, al.subject, al.subjectName, al.newValue)
+		case "MODIFICATION":
+			err = SendAuditLogWithModification(al.ctx, al.subject, al.subjectName, al.oldValue, al.newValue, al.ignoredProperties...)
+		case "DELETION":
+			err = SendAuditLogWithDeletion(al.ctx, al.subject, al.subjectName, al.oldValue)
+		default:
+			return errors.New("invalid audit operation: " + al.operation)
+		}
+
+		if err != nil {
+			log.Error().Msg("Failed to send audit log")
+			al.sendError = err
+			return err
+		}
 	}
 
 	if al.consoleLog != nil {
 		if err = SendNotification(al.ctx, al.notification.eventCategory, al.notification.message, al.notification.targets); err != nil {
 			log.Error().Err(err).Msg("Failed to send notification")
+			al.sendError = err
+			// Todo: Maybe add it to a list for retry purpose
 		}
 	}
 	if al.notification != nil {
 		if err = SendConsoleLog(al.ctx, al.consoleLog.logLevel, al.consoleLog.message); err != nil {
 			log.Error().Err(err).Msg("Failed to send console log")
-			// Todo: Maybe add it to a list for retry purpose
+			al.sendError = err
 		}
 	}
 	return nil
 }
 
-func (al *auditLog[T]) Create(subject, subjectName string, newValue interface{}) AuditLogInitializer {
+func (al *auditLog[T]) Create(subject, subjectName string, newValue interface{}) AuditLogConfiguration {
 	al.operation = "CREATION"
 	al.newValue = newValue
 	al.subject = subject
@@ -306,7 +373,7 @@ func (al *auditLog[T]) Create(subject, subjectName string, newValue interface{})
 	return al
 }
 
-func (al *auditLog[T]) Modify(subject, subjectName string, oldValue, newValue interface{}) AuditLogInitializer {
+func (al *auditLog[T]) Modify(subject, subjectName string, oldValue, newValue interface{}) AuditLogConfiguration {
 	al.operation = "MODIFICATION"
 	al.oldValue = oldValue
 	al.newValue = newValue
@@ -315,11 +382,44 @@ func (al *auditLog[T]) Modify(subject, subjectName string, oldValue, newValue in
 	return al
 }
 
-func (al *auditLog[T]) Delete(subject, subjectName string, oldValue interface{}) AuditLogInitializer {
+func (al *auditLog[T]) Delete(subject, subjectName string, oldValue interface{}) AuditLogConfiguration {
 	al.operation = "DELETION"
 	al.oldValue = oldValue
 	al.subject = subject
 	al.subjectName = subjectName
+	return al
+}
+
+func (al *auditLog[T]) CreateItem(subjectName string, newValue interface{}) BatchedAuditLogOperation {
+	al.ensureBatchedAuditLogs(batchedCreation)
+	al.batchedAuditLogMap[batchedCreation].AddCreation(al.subject, subjectName, newValue)
+	return al
+}
+
+func (al *auditLog[T]) ModifyItem(subjectName string, oldValue, newValue interface{}) BatchedAuditLogOperation {
+	al.ensureBatchedAuditLogs(batchedModification)
+	al.batchedAuditLogMap[batchedModification].AddModification(al.subject, subjectName, oldValue, newValue)
+	return al
+}
+
+func (al *auditLog[T]) DeleteItem(subjectName string, oldValue interface{}) BatchedAuditLogOperation {
+	al.ensureBatchedAuditLogs(batchedDeletion)
+	al.batchedAuditLogMap[batchedDeletion].AddDeletion(al.subject, subjectName, oldValue)
+	return al
+}
+
+func (al *auditLog[T]) AddCreation(subject, subjectName string, newValue interface{}) GroupedModificationAuditLogOperation {
+	al.batchedAuditLogMap[batchedCreation].AddCreation(subject, subjectName, newValue)
+	return al
+}
+
+func (al *auditLog[T]) AddModification(subject, subjectName string, oldValue, newValue interface{}) GroupedModificationAuditLogOperation {
+	al.batchedAuditLogMap[batchedModification].AddModification(subject, subjectName, oldValue, newValue)
+	return al
+}
+
+func (al *auditLog[T]) AddDeletion(subject, subjectName string, oldValue interface{}) GroupedModificationAuditLogOperation {
+	al.batchedAuditLogMap[batchedDeletion].AddDeletion(subject, subjectName, oldValue)
 	return al
 }
 
@@ -341,6 +441,13 @@ func (al *auditLog[T]) Users(targets ...string) NotificationConfigurer[T] {
 func (al *auditLog[T]) Message(message string) T {
 	al.notification.Message(message)
 	return interface{}(al).(T)
+}
+
+func (al *auditLog[T]) ensureBatchedAuditLogs(batchType int) {
+	if _, ok := al.batchedAuditLogMap[batchType]; !ok {
+		al.batchedAuditLogMap = make(map[int]*AuditLogCollector, 0)
+		al.batchedAuditLogMap[batchType] = newAuditLogCollector()
+	}
 }
 
 func (al *auditLog[T]) ensureIgnoredProperties() {
@@ -416,10 +523,12 @@ func (c *AuditLogCollector) get() logcomapi.CreateAuditLogRequestDto {
 		}
 	}
 
-	if hasSameCategory {
-		c.parentAuditLog.Category = seenCategory
-	} else {
-		c.parentAuditLog.Category = "MODIFICATION"
+	if c.parentAuditLog.Category == "" {
+		if hasSameCategory {
+			c.parentAuditLog.Category = seenCategory
+		} else {
+			c.parentAuditLog.Category = "MODIFICATION"
+		}
 	}
 
 	return c.parentAuditLog
