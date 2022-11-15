@@ -19,13 +19,13 @@ import (
 )
 
 var (
-	configuration     LogComConfiguration
+	configuration     Configuration
 	apiClientInstance *logcomapi.APIClient
 	internalLogger    zerolog.Logger
 	once              sync.Once
 )
 
-type LogComConfiguration struct {
+type Configuration struct {
 	ServiceName    string
 	LogComURL      string
 	HeaderProvider HeaderProviderFunc
@@ -42,7 +42,7 @@ func init() {
 		return
 	}
 
-	config := LogComConfiguration{
+	config := Configuration{
 		ServiceName: "Unknown",
 		LogComURL:   logcomURL,
 		HeaderProvider: func(ctx context.Context) http.Header {
@@ -84,7 +84,7 @@ func init() {
 	apiClientInstance = logcomapi.NewAPIClient(logComAPIConfig)
 }
 
-func Init(config LogComConfiguration, logger *zerolog.Logger) {
+func Init(config Configuration, logger *zerolog.Logger) {
 	if config.LogComURL == "" {
 		logcomURL := os.Getenv("LOG_COM_URL")
 		if logcomURL == "" {
@@ -273,7 +273,7 @@ func SendAuditLogGroup(ctx context.Context, auditLogCollector *AuditLogCollector
 	return SendAuditLog(ctx, auditLogCollector.get())
 }
 
-func sendAuditLogGroup[T](ctx context.Context, auditLog *auditLog[T], auditLogCollector *AuditLogCollector) error {
+func sendAuditLogGroup[T any](ctx context.Context, auditLog *auditLog[T], auditLogCollector *AuditLogCollector) error {
 	auditLogCollector.parentAuditLog = logcomapi.CreateAuditLogRequestDto{
 		Category:    auditLog.operation,
 		Subject:     auditLog.subject,
