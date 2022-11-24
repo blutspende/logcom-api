@@ -33,6 +33,32 @@ logcom.Init(logcom.Configuration{
 }, &log.Logger)
 ```
 
+### Service-to-Service authorization
+
+For using service-to-service authorization a specific interface has been provided. The API is not intended to be aware
+of any authentication provider, so the interface must be implemented and set to obtain the necessary client credentials.
+
+```go
+type ClientCredentialProvider interface {
+    GetClientCredential() (string, error)
+}
+```
+
+It is also possible to pass a simple string token (just like it is used for user context aware authorization), when the
+interface is not getting implemented.
+
+#### Call when using the interface
+
+```go
+UseService2ServiceAuthorization()
+```
+
+#### Call when using the simple `string` Bearer JWT token
+
+```go
+WithBearerAuthorization(bearerToken string)
+```
+
 ### Console logging
 
 For sending console logs to LogCom too, use one of these methods:
@@ -341,7 +367,7 @@ err := auditBatch.WithContext(ctx).
         - `Users(targets ...string)`
 
 3. Configuration
-    - `WithClientSecret(secret string)`
+    - `UseService2ServiceAuthorization()`
     - `WithBearerAuthorization(bearerToken string)`
     - `WithContext(ctx context.Context)`
     - `WithTransactionID(transactionID uuid.UUID)`
@@ -516,15 +542,14 @@ err := auditBatch.WithContext(ctx).
 - Specifies the notification targets (as users)
 - `targets`: List of users (ID, username, other unique identifier)
 
+`UseService2ServiceAuthorization()`
+
+- Uses the client credentials provided by the calling service
+
 `WithBearerAuthorization(bearerToken string)`
 
 - Sets the bearer JWT token for the request
 - `bearerToken`: The bearer token
-
-`WithClientSecret(secret string)`
-
-- Sets the client secret for the request
-- `secret`: The client secret
 
 `WithContext(ctx context.Context)`
 

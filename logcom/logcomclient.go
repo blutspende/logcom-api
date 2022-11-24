@@ -2,7 +2,6 @@ package logcom
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,12 +25,15 @@ var (
 	once              sync.Once
 )
 
+type ClientCredentialProvider interface {
+	GetClientCredential() (string, error)
+}
+
 type Configuration struct {
-	ServiceName    string
-	LogComURL      string
-	ClientID       string
-	ClientSecret   string
-	HeaderProvider HeaderProviderFunc
+	ServiceName              string
+	LogComURL                string
+	HeaderProvider           HeaderProviderFunc
+	ClientCredentialProvider ClientCredentialProvider
 }
 
 type HeaderProviderFunc func(ctx context.Context) http.Header
@@ -45,21 +47,9 @@ func init() {
 		return
 	}
 
-	clientID := os.Getenv("CLIENT_ID")
-	if clientID == "" {
-		internalLogger.Warn().Msg("Client ID is missing")
-	}
-
-	clientSecret := os.Getenv("CLIENT_SECRET")
-	if clientSecret == "" {
-		internalLogger.Warn().Msg("Client secret is missing")
-	}
-
 	config := Configuration{
-		ServiceName:  "Unknown",
-		LogComURL:    logcomURL,
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
+		ServiceName: "Unknown",
+		LogComURL:   logcomURL,
 		HeaderProvider: func(ctx context.Context) http.Header {
 			headers := make(map[string][]string, 0)
 
@@ -139,6 +129,10 @@ func Init(config Configuration, logger *zerolog.Logger) {
 		apiClientInstance = logcomapi.NewAPIClient(logcomAPIConfig)
 		*logger = logger.Hook(logComHook{internalLogger: internalLogger})
 	})
+}
+
+func SetClientCredentialProvider(provider ClientCredentialProvider) {
+	configuration.ClientCredentialProvider = provider
 }
 
 func IsEnabled() bool {
@@ -454,8 +448,4 @@ func ensureHTTPHeaders(httpHeadersPointer *http.Header) {
 	if *httpHeadersPointer == nil {
 		*httpHeadersPointer = make(map[string][]string, 0)
 	}
-}
-
-func assembleClientCredential(clientID, clientSecret string) string {
-	return "Basic " + base64.StdEncoding.EncodeToString([]byte(clientID+":"+clientSecret))
 }

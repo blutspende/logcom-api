@@ -18,8 +18,7 @@ type NotificationAction interface {
 }
 
 type NotificationInitializer interface {
-	UseClientSecret() NotificationAction
-	WithClientIDAndSecret(clientId, secret string) NotificationAction
+	UseService2ServiceAuthorization() NotificationAction
 	WithBearerAuthorization(bearerToken string) NotificationAction
 	WithContext(ctx context.Context) NotificationAction
 	WithTransactionID(transactionID uuid.UUID) NotificationInitializer
@@ -48,6 +47,7 @@ type notification[T any] struct {
 func Notify() NotificationConfigurer[NotificationInitializer] {
 	return &notification[NotificationInitializer]{
 		eventCategory: "NOTIFICATION",
+		ctx:           context.TODO(),
 	}
 }
 
@@ -83,7 +83,7 @@ func (n *notification[T]) Send() error {
 	}
 
 	if n.consoleLog != nil {
-		if err := sendConsoleLog(n.consoleLog.ctx, n.consoleLog.logLevel, n.consoleLog.message, n.httpHeaders); err != nil {
+		if err := sendConsoleLog(n.ctx, n.consoleLog.logLevel, n.consoleLog.message, n.httpHeaders); err != nil {
 			log.Error().Err(err).Msg("Failed to send console log")
 		}
 	}
@@ -91,20 +91,19 @@ func (n *notification[T]) Send() error {
 	return nil
 }
 
-func (n *notification[T]) UseClientSecret() NotificationAction {
-	ensureHTTPHeaders(&n.httpHeaders)
-	if configuration.ClientID != "" && configuration.ClientSecret != "" {
-		n.httpHeaders["Authorization"] = []string{assembleClientCredential(configuration.ClientID, configuration.ClientSecret)}
-	} else {
-		log.Error().Msg("Client ID and Secret are not configured")
+func (n *notification[T]) UseService2ServiceAuthorization() NotificationAction {
+	if configuration.ClientCredentialProvider == nil {
+		log.Fatal().Msg("Client credential provider must be set")
+		return n
 	}
-	return n
-}
 
-func (n *notification[T]) WithClientIDAndSecret(clientID, clientSecret string) NotificationAction {
-	ensureHTTPHeaders(&n.httpHeaders)
-	n.httpHeaders["Authorization"] = []string{assembleClientCredential(clientID, clientSecret)}
-	return n
+	clientCredential, err := configuration.ClientCredentialProvider.GetClientCredential()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get client credential")
+		return n
+	}
+
+	return n.WithBearerAuthorization(clientCredential)
 }
 
 func (n *notification[T]) WithBearerAuthorization(bearerToken string) NotificationAction {
@@ -148,6 +147,10 @@ func (n *notification[T]) Message(message string) T {
 }
 
 func (n *notification[T]) transformToNotificationTargets(targetType string, targets ...string) {
+	if n.targets == nil {
+		n.targets = make(map[string][]string, 0)
+	}
+
 	n.targets[targetType] = make([]string, len(targets))
 	for i, target := range targets {
 		n.targets[targetType][i] = target

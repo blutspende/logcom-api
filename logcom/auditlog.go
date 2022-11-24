@@ -37,8 +37,7 @@ type AuditLogAction interface {
 }
 
 type AuditLogConfiguration interface {
-	UseClientSecret() AuditLogAction
-	WithClientIDAndSecret(clientID, clientSecret string) AuditLogAction
+	UseService2ServiceAuthorization() AuditLogAction
 	WithBearerAuthorization(bearerToken string) AuditLogAction
 	WithContext(ctx context.Context) AuditLogAction
 	WithTransactionID(transactionID uuid.UUID) AuditLogConfiguration
@@ -99,7 +98,9 @@ type auditLog[T any] struct {
 }
 
 func Audit() AuditLogOperation {
-	return &auditLog[AuditLogAction]{}
+	return &auditLog[AuditLogAction]{
+		ctx: context.TODO(),
+	}
 }
 
 func AuditCreation(subject, subjectName string, newValue interface{}) AuditLogConfiguration {
@@ -284,20 +285,19 @@ func (al *auditLog[T]) AndLog(logLevel zerolog.Level, message string) AuditLogAc
 	return al
 }
 
-func (al *auditLog[T]) UseClientSecret() AuditLogAction {
-	ensureHTTPHeaders(&al.httpHeaders)
-	if configuration.ClientID != "" && configuration.ClientSecret != "" {
-		al.httpHeaders["Authorization"] = []string{assembleClientCredential(configuration.ClientID, configuration.ClientSecret)}
-	} else {
-		log.Error().Msg("Client ID and Secret are not configured")
+func (al *auditLog[T]) UseService2ServiceAuthorization() AuditLogAction {
+	if configuration.ClientCredentialProvider == nil {
+		log.Fatal().Msg("Client credential provider must be set")
+		return al
 	}
-	return al
-}
 
-func (al *auditLog[T]) WithClientIDAndSecret(clientID, clientSecret string) AuditLogAction {
-	ensureHTTPHeaders(&al.httpHeaders)
-	al.httpHeaders["Authorization"] = []string{assembleClientCredential(clientID, clientSecret)}
-	return al
+	clientCredential, err := configuration.ClientCredentialProvider.GetClientCredential()
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get client credential")
+		return al
+	}
+
+	return al.WithBearerAuthorization(clientCredential)
 }
 
 func (al *auditLog[T]) WithBearerAuthorization(bearerToken string) AuditLogAction {
