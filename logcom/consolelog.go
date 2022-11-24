@@ -22,7 +22,7 @@ type logComHook struct {
 }
 
 func (h logComHook) Run(e *zerolog.Event, ctx context.Context, level zerolog.Level, msg string) {
-	if err := SendConsoleLog(ctx, level, msg); err != nil {
+	if err := sendConsoleLog(ctx, level, msg, nil); err != nil {
 		h.internalLogger.Error().Err(err).Msg("Failed to send console log to LogCom")
 	}
 }

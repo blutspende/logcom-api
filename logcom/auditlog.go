@@ -37,7 +37,8 @@ type AuditLogAction interface {
 }
 
 type AuditLogConfiguration interface {
-	WithClientSecret(secret string) AuditLogAction
+	UseClientSecret() AuditLogAction
+	WithClientIDAndSecret(clientID, clientSecret string) AuditLogAction
 	WithBearerAuthorization(bearerToken string) AuditLogAction
 	WithContext(ctx context.Context) AuditLogAction
 	WithTransactionID(transactionID uuid.UUID) AuditLogConfiguration
@@ -283,9 +284,19 @@ func (al *auditLog[T]) AndLog(logLevel zerolog.Level, message string) AuditLogAc
 	return al
 }
 
-func (al *auditLog[T]) WithClientSecret(secret string) AuditLogAction {
+func (al *auditLog[T]) UseClientSecret() AuditLogAction {
 	ensureHTTPHeaders(&al.httpHeaders)
-	al.httpHeaders["X-Client-Secret"] = []string{secret}
+	if configuration.ClientID != "" && configuration.ClientSecret != "" {
+		al.httpHeaders["Authorization"] = []string{assembleClientCredential(configuration.ClientID, configuration.ClientSecret)}
+	} else {
+		log.Error().Msg("Client ID and Secret are not configured")
+	}
+	return al
+}
+
+func (al *auditLog[T]) WithClientIDAndSecret(clientID, clientSecret string) AuditLogAction {
+	ensureHTTPHeaders(&al.httpHeaders)
+	al.httpHeaders["Authorization"] = []string{assembleClientCredential(clientID, clientSecret)}
 	return al
 }
 
@@ -320,7 +331,7 @@ func (al *auditLog[T]) Send() error {
 	var isBatch bool
 	for _, operation := range batchedOperationList {
 		if al.batchedAuditLogMap[operation] != nil && len(al.batchedAuditLogMap[operation].auditLogs) > 0 {
-			err = sendAuditLogGroup(al.ctx, al, al.batchedAuditLogMap[operation])
+			err = sendAuditLogGroup(al.ctx, al, al.batchedAuditLogMap[operation], al.httpHeaders)
 			if err != nil {
 				log.Error().Msg("Failed to send batched audit logs")
 				al.sendError = err
@@ -333,11 +344,11 @@ func (al *auditLog[T]) Send() error {
 	if !isBatch {
 		switch al.operation {
 		case "CREATION":
-			err = SendAuditLogWithCreation(al.ctx, al.subject, al.subjectName, al.newValue)
+			err = sendAuditLogWithCreation(al.ctx, al.subject, al.subjectName, al.newValue, al.httpHeaders)
 		case "MODIFICATION":
-			err = SendAuditLogWithModification(al.ctx, al.subject, al.subjectName, al.oldValue, al.newValue, al.ignoredProperties...)
+			err = sendAuditLogWithModification(al.ctx, al.subject, al.subjectName, al.oldValue, al.newValue, al.httpHeaders, al.ignoredProperties...)
 		case "DELETION":
-			err = SendAuditLogWithDeletion(al.ctx, al.subject, al.subjectName, al.oldValue)
+			err = sendAuditLogWithDeletion(al.ctx, al.subject, al.subjectName, al.oldValue, al.httpHeaders)
 		default:
 			return errors.New("invalid audit operation: " + al.operation)
 		}
@@ -350,14 +361,14 @@ func (al *auditLog[T]) Send() error {
 	}
 
 	if al.consoleLog != nil {
-		if err = SendNotification(al.ctx, al.notification.eventCategory, al.notification.message, al.notification.targets); err != nil {
+		if err = sendNotification(al.ctx, al.notification.eventCategory, al.notification.message, al.notification.targets, al.httpHeaders); err != nil {
 			log.Error().Err(err).Msg("Failed to send notification")
 			al.sendError = err
 			// Todo: Maybe add it to a list for retry purpose
 		}
 	}
 	if al.notification != nil {
-		if err = SendConsoleLog(al.ctx, al.consoleLog.logLevel, al.consoleLog.message); err != nil {
+		if err = sendConsoleLog(al.ctx, al.consoleLog.logLevel, al.consoleLog.message, al.httpHeaders); err != nil {
 			log.Error().Err(err).Msg("Failed to send console log")
 			al.sendError = err
 		}

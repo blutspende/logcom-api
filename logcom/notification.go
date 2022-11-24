@@ -18,7 +18,8 @@ type NotificationAction interface {
 }
 
 type NotificationInitializer interface {
-	WithClientSecret(secret string) NotificationAction
+	UseClientSecret() NotificationAction
+	WithClientIDAndSecret(clientId, secret string) NotificationAction
 	WithBearerAuthorization(bearerToken string) NotificationAction
 	WithContext(ctx context.Context) NotificationAction
 	WithTransactionID(transactionID uuid.UUID) NotificationInitializer
@@ -76,13 +77,13 @@ func (n *notification[T]) AndLog(logLevel zerolog.Level, message string) Notific
 }
 
 func (n *notification[T]) Send() error {
-	if err := SendNotification(n.ctx, n.eventCategory, n.message, n.targets); err != nil {
+	if err := sendNotification(n.ctx, n.eventCategory, n.message, n.targets, n.httpHeaders); err != nil {
 		log.Error().Msg("Failed to send notification")
 		return err
 	}
 
 	if n.consoleLog != nil {
-		if err := SendConsoleLog(n.consoleLog.ctx, n.consoleLog.logLevel, n.consoleLog.message); err != nil {
+		if err := sendConsoleLog(n.consoleLog.ctx, n.consoleLog.logLevel, n.consoleLog.message, n.httpHeaders); err != nil {
 			log.Error().Err(err).Msg("Failed to send console log")
 		}
 	}
@@ -90,9 +91,19 @@ func (n *notification[T]) Send() error {
 	return nil
 }
 
-func (n *notification[T]) WithClientSecret(secret string) NotificationAction {
+func (n *notification[T]) UseClientSecret() NotificationAction {
 	ensureHTTPHeaders(&n.httpHeaders)
-	n.httpHeaders["X-Client-Secret"] = []string{secret}
+	if configuration.ClientID != "" && configuration.ClientSecret != "" {
+		n.httpHeaders["Authorization"] = []string{assembleClientCredential(configuration.ClientID, configuration.ClientSecret)}
+	} else {
+		log.Error().Msg("Client ID and Secret are not configured")
+	}
+	return n
+}
+
+func (n *notification[T]) WithClientIDAndSecret(clientID, clientSecret string) NotificationAction {
+	ensureHTTPHeaders(&n.httpHeaders)
+	n.httpHeaders["Authorization"] = []string{assembleClientCredential(clientID, clientSecret)}
 	return n
 }
 
