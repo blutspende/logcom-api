@@ -5,24 +5,31 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"reflect"
+	"runtime"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/DRK-Blutspende-BaWueHe/logcom-api"
-	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom"
-	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom/log"
 	"github.com/google/uuid"
 )
 
 var (
 	configuration     Configuration
 	apiClientInstance *logcomapi.APIClient
-	internalLogger    zerolog.Logger
 	once              sync.Once
+
+	logInfo    *log.Logger
+	logWarning *log.Logger
+	logError   *log.Logger
+	logFatal   *log.Logger
 )
 
 type ClientCredentialProvider interface {
@@ -39,13 +46,38 @@ type Configuration struct {
 type HeaderProviderFunc func(ctx context.Context) http.Header
 
 func init() {
-	internalLogger = log.Logger
+	logFormat := &logFormat{
+		message: "timestamp level file [LogCom] > message",
+		time:    "2006-01-02T15:04:05Z07:00",
+	}
+
+	infoHandle := logWriter{
+		writer:    os.Stdout,
+		logFormat: logFormat,
+		level:     "INFO",
+	}
+	warningHandle := logWriter{
+		writer:    os.Stdout,
+		logFormat: logFormat,
+		level:     "WARN",
+	}
+	errorHandle := logWriter{
+		writer:    os.Stderr,
+		logFormat: logFormat,
+		level:     "ERR",
+	}
+	fatalHandle := logWriter{
+		writer:    os.Stderr,
+		logFormat: logFormat,
+		level:     "FTL",
+	}
+
+	logInfo = log.New(infoHandle, "", 0)
+	logWarning = log.New(warningHandle, "", 0)
+	logError = log.New(errorHandle, "", 0)
+	logFatal = log.New(fatalHandle, "", 0)
 
 	logcomURL := os.Getenv("LOG_COM_URL")
-	if logcomURL == "" {
-		internalLogger.Error().Msg("LogCom URL is missing thus functionalities are not available")
-		return
-	}
 
 	config := Configuration{
 		ServiceName: "Unknown",
@@ -53,16 +85,26 @@ func init() {
 		HeaderProvider: func(ctx context.Context) http.Header {
 			headers := make(map[string][]string, 0)
 
-			if authorization := ctx.Value("Authorization").(*string); authorization != nil || *authorization != "" {
-				headers["Authorization"] = []string{*authorization}
-			} else {
-				internalLogger.Warn().Msg("Authorization header not set")
+			authorizationHeader := ctx.Value("Authorization")
+			if authorizationHeader != nil {
+				if authorization, ok := authorizationHeader.(string); ok && authorization != "" {
+					headers["Authorization"] = []string{authorization}
+				}
 			}
 
-			if requestID := ctx.Value("X-Request-ID").(*string); requestID != nil || *requestID != "" {
-				headers["X-Request-ID"] = []string{*requestID}
-			} else {
-				internalLogger.Warn().Msg("X-Request-ID header not set")
+			if _, ok := headers["Authorization"]; !ok {
+				logWarning.Println("Authorization header is not set")
+			}
+
+			requestIDHeader := ctx.Value("X-Request-ID")
+			if requestIDHeader != nil {
+				if requestID, ok := requestIDHeader.(string); ok && requestID != "" {
+					headers["X-Request-ID"] = []string{requestID}
+				}
+			}
+
+			if _, ok := headers["X-Request-ID"]; !ok {
+				logWarning.Println("X-Request-ID header is not set")
 			}
 
 			return headers
@@ -77,7 +119,7 @@ func init() {
 
 	parsedUrl, err := url.Parse(configuration.LogComURL)
 	if err != nil {
-		internalLogger.Error().Msgf("Failed to get LogCom URL scheme, falling back to default (%s)", "https")
+		logError.Printf("Failed to get LogCom URL scheme, falling back to default (%s): %v\n", "https", err)
 
 		parsedUrl = &url.URL{
 			Scheme: "https",
@@ -86,38 +128,45 @@ func init() {
 
 	logComAPIConfig.Scheme = parsedUrl.Scheme
 
+	if logcomURL == "" {
+		logError.Println("LogCom URL is missing thus functionalities are not available")
+		return
+	}
+
 	apiClientInstance = logcomapi.NewAPIClient(logComAPIConfig)
 }
 
-func Init(config Configuration, logger *zerolog.Logger) {
+func Init(config Configuration) {
 	if config.LogComURL == "" {
-		logcomURL := os.Getenv("LOG_COM_URL")
-		if logcomURL == "" {
-			log.Fatal().Msg("LogCom URL is missing")
+		config.LogComURL = os.Getenv("LOG_COM_URL")
+		if config.LogComURL == "" {
+			logFatal.Println("LogCom URL is missing")
 			return
 		}
 	}
 
 	once.Do(func() {
-		configuration = config
+		configuration.LogComURL = config.LogComURL
+
+		if config.ServiceName != "" {
+			configuration.ServiceName = config.ServiceName
+		}
+
+		if config.ClientCredentialProvider != nil {
+			configuration.ClientCredentialProvider = config.ClientCredentialProvider
+		}
+
+		if config.HeaderProvider != nil {
+			configuration.HeaderProvider = config.HeaderProvider
+		}
 
 		logcomAPIConfig := logcomapi.NewConfiguration()
 		logcomAPIConfig.BasePath = configuration.LogComURL + "/api"
 		logcomAPIConfig.Host = configuration.LogComURL
 
-		internalLogger = logger.Sample(zerolog.LevelSampler{
-			ErrorSampler: &zerolog.BurstSampler{
-				Burst:       1,
-				Period:      5 * time.Second,
-				NextSampler: &zerolog.BasicSampler{N: 20},
-			},
-		})
-
 		parsedUrl, err := url.Parse(configuration.LogComURL)
 		if err != nil {
-			internalLogger.Error().Err(err).
-				Str("url", configuration.LogComURL).
-				Msgf("Failed to get LogCom URL scheme, falling back to default (%s)", "https")
+			logError.Printf("Failed to get LogCom URL scheme, falling back to default (%s): %v\n", "https", err)
 
 			parsedUrl = &url.URL{
 				Scheme: "https",
@@ -127,7 +176,6 @@ func Init(config Configuration, logger *zerolog.Logger) {
 		logcomAPIConfig.Scheme = parsedUrl.Scheme
 
 		apiClientInstance = logcomapi.NewAPIClient(logcomAPIConfig)
-		*logger = logger.Hook(logComHook{internalLogger: internalLogger})
 	})
 }
 
@@ -139,7 +187,7 @@ func IsEnabled() bool {
 	return apiClientInstance != nil
 }
 
-func SendConsoleLog(ctx context.Context, logLevel zerolog.Level, message string) error {
+func SendConsoleLog(ctx context.Context, logLevel Level, message string) error {
 	if ctx == context.TODO() || ctx == context.Background() {
 		return errors.New("context cannot be empty")
 	}
@@ -209,7 +257,7 @@ func SendNotificationWithModel(ctx context.Context, model logcomapi.CreateNotifi
 	return sendNotificationWithModel(ctx, model, nil)
 }
 
-func sendConsoleLog(ctx context.Context, logLevel zerolog.Level, message string, extraHeaders http.Header) error {
+func sendConsoleLog(ctx context.Context, logLevel Level, message string, extraHeaders http.Header) error {
 	return sendConsoleLogWithModel(ctx, logcomapi.CreateConsoleLogRequestDto{
 		Level:   int32(logLevel),
 		Message: message,
@@ -219,7 +267,7 @@ func sendConsoleLog(ctx context.Context, logLevel zerolog.Level, message string,
 
 func sendConsoleLogWithModel(ctx context.Context, model logcomapi.CreateConsoleLogRequestDto, extraHeaders http.Header) error {
 	if !IsEnabled() {
-		internalLogger.Debug().Msg("LogCom is disabled")
+		logInfo.Println("LogCom is disabled")
 		return nil
 	}
 
@@ -265,14 +313,20 @@ func sendAuditLogWithModification(ctx context.Context, subject, subjectName stri
 		})
 	}
 
-	changes, err := GetModelChanges(ctx, oldValue, newValue, ignoredProperties...)
+	changes, err := GetModelChanges(oldValue, newValue, ignoredProperties...)
 	if err != nil {
-		log.Error().MsgContext(ctx, "Failed to send audit log")
+		err = sendConsoleLog(ctx, ErrorLevel, "Failed to send audit log: "+err.Error(), extraHeaders)
+		if err != nil {
+			logError.Printf("Failed to send console log: %v\n", err)
+		}
 		return err
 	}
 
 	if len(changes) < 1 {
-		log.Debug().MsgContext(ctx, "No changes")
+		err = sendConsoleLog(ctx, DebugLevel, "No changes", extraHeaders)
+		if err != nil {
+			logError.Printf("Failed to send console log: %v\n", err)
+		}
 		return nil
 	}
 
@@ -324,7 +378,7 @@ func sendAuditLogWithDeletion(ctx context.Context, subject, subjectName string, 
 
 func sendAuditLog(ctx context.Context, model logcomapi.CreateAuditLogRequestDto, extraHeaders http.Header) error {
 	if !IsEnabled() {
-		internalLogger.Info().Msg("LogCom is disabled")
+		logInfo.Println("LogCom is disabled")
 		return nil
 	}
 
@@ -367,7 +421,7 @@ func sendNotification(ctx context.Context, eventCategory string, message string,
 
 func sendNotificationWithModel(ctx context.Context, model logcomapi.CreateNotificationRequestDto, extraHeaders http.Header) error {
 	if !IsEnabled() {
-		internalLogger.Debug().Msg("LogCom is disabled")
+		logInfo.Println("LogCom is disabled")
 		return nil
 	}
 
@@ -448,4 +502,45 @@ func ensureHTTPHeaders(httpHeadersPointer *http.Header) {
 	if *httpHeadersPointer == nil {
 		*httpHeadersPointer = make(map[string][]string, 0)
 	}
+}
+
+type logFormat struct {
+	message string
+	time    string
+}
+
+type logWriter struct {
+	writer    io.Writer
+	level     string
+	logFormat *logFormat
+}
+
+func (w logWriter) Write(bytes []byte) (int, error) {
+	messageFormat := w.logFormat.message
+	formatKeys := strings.Split(messageFormat, " ")
+	orderedValues := make([]interface{}, 0)
+	for _, formatKey := range formatKeys {
+		var value interface{}
+
+		if strings.Contains(formatKey, "timestamp") {
+			messageFormat = strings.Replace(messageFormat, "timestamp", "%s", 1)
+			value = time.Now().UTC().Format(w.logFormat.time)
+		} else if strings.Contains(formatKey, "level") {
+			messageFormat = strings.Replace(messageFormat, "level", "%s", 1)
+			value = w.level
+		} else if strings.Contains(formatKey, "message") {
+			messageFormat = strings.Replace(messageFormat, "message", "%s", 1)
+			value = string(bytes)
+		} else if strings.Contains(formatKey, "file") {
+			_, filename, line, _ := runtime.Caller(3)
+			messageFormat = strings.Replace(messageFormat, "file", "%s", 1)
+			value = filename + ":" + strconv.Itoa(line)
+		} else {
+			continue
+		}
+
+		orderedValues = append(orderedValues, value)
+	}
+
+	return fmt.Fprintf(w.writer, messageFormat, orderedValues...)
 }

@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/DRK-Blutspende-BaWueHe/logcom-api"
-	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom"
-	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom/log"
 	"github.com/google/uuid"
 )
 
@@ -31,8 +29,8 @@ var batchedOperationList = []int{
 type AuditLogAction interface {
 	IgnoreChangeOf(propertyNames ...string) AuditLogAction
 	AndNotify() NotificationConfigurer[AuditLogAction]
-	AndLog(logLevel zerolog.Level, message string) AuditLogAction
 	OnFailure(onErrorCallback func(error)) AuditLogAction
+	AndLog(logLevel Level, message string) AuditLogAction
 	Send() error
 }
 
@@ -153,7 +151,7 @@ func newAuditLogCollector() *AuditLogCollector {
 	}
 }
 
-func GetModelChanges(ctx context.Context, oldModel, newModel interface{}, ignoredProperties ...string) ([]ModelChange, error) {
+func GetModelChanges(oldModel, newModel interface{}, ignoredProperties ...string) ([]ModelChange, error) {
 	ignoredPropertySet := make(map[string]struct{}, len(ignoredProperties))
 	for i := range ignoredProperties {
 		ignoredPropertySet[ignoredProperties[i]] = struct{}{}
@@ -177,7 +175,6 @@ func GetModelChanges(ctx context.Context, oldModel, newModel interface{}, ignore
 	}
 
 	if typeOfOldModel != typeOfNewModel {
-		log.Fatal().MsgContext(ctx, "Old and new model have different types")
 		return nil, errors.New("old and new model have different types")
 	}
 
@@ -196,7 +193,7 @@ func GetModelChanges(ctx context.Context, oldModel, newModel interface{}, ignore
 
 			kindOfOldModelField := fieldOfOldModel.Kind()
 			if (kindOfOldModelField == reflect.Func) || (kindOfOldModelField == reflect.Chan) {
-				log.Warn().MsgfContext(ctx, "Unsupported type: %s", kindOfOldModelField.String())
+				logWarning.Printf("Unsupported type: %s\n", kindOfOldModelField.String())
 				continue
 			}
 
@@ -278,7 +275,7 @@ func (al *auditLog[T]) AndNotify() NotificationConfigurer[AuditLogAction] {
 	return interface{}(al).(NotificationConfigurer[AuditLogAction])
 }
 
-func (al *auditLog[T]) AndLog(logLevel zerolog.Level, message string) AuditLogAction {
+func (al *auditLog[T]) AndLog(logLevel Level, message string) AuditLogAction {
 	ensureConsoleLog(&al.consoleLog)
 	al.consoleLog.logLevel = logLevel
 	al.consoleLog.message = message
@@ -287,13 +284,13 @@ func (al *auditLog[T]) AndLog(logLevel zerolog.Level, message string) AuditLogAc
 
 func (al *auditLog[T]) UseService2ServiceAuthorization() AuditLogAction {
 	if configuration.ClientCredentialProvider == nil {
-		log.Fatal().Msg("Client credential provider must be set")
+		logFatal.Println("Client credential provider must be set")
 		return al
 	}
 
 	clientCredential, err := configuration.ClientCredentialProvider.GetClientCredential()
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get client credential")
+		logError.Printf("Failed to get client credential: %v\n", err)
 		return al
 	}
 
@@ -333,7 +330,7 @@ func (al *auditLog[T]) Send() error {
 		if al.batchedAuditLogMap[operation] != nil && len(al.batchedAuditLogMap[operation].auditLogs) > 0 {
 			err = sendAuditLogGroup(al.ctx, al, al.batchedAuditLogMap[operation], al.httpHeaders)
 			if err != nil {
-				log.Error().Msg("Failed to send batched audit logs")
+				logError.Println("Failed to send batched audit logs")
 				al.sendError = err
 				return err
 			}
@@ -354,7 +351,7 @@ func (al *auditLog[T]) Send() error {
 		}
 
 		if err != nil {
-			log.Error().Msg("Failed to send audit log")
+			logError.Println("Failed to send audit log")
 			al.sendError = err
 			return err
 		}
@@ -362,14 +359,14 @@ func (al *auditLog[T]) Send() error {
 
 	if al.consoleLog != nil {
 		if err = sendNotification(al.ctx, al.notification.eventCategory, al.notification.message, al.notification.targets, al.httpHeaders); err != nil {
-			log.Error().Err(err).Msg("Failed to send notification")
+			logError.Printf("Failed to send notification: %v\n", err)
 			al.sendError = err
 			// Todo: Maybe add it to a list for retry purpose
 		}
 	}
 	if al.notification != nil {
 		if err = sendConsoleLog(al.ctx, al.consoleLog.logLevel, al.consoleLog.message, al.httpHeaders); err != nil {
-			log.Error().Err(err).Msg("Failed to send console log")
+			logError.Printf("Failed to send console log: %v\n", err)
 			al.sendError = err
 		}
 	}

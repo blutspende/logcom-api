@@ -7,13 +7,11 @@ import (
 	"time"
 
 	"github.com/DRK-Blutspende-BaWueHe/logcom-api"
-	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom"
-	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom/log"
 	"github.com/google/uuid"
 )
 
 type NotificationAction interface {
-	AndLog(logLevel zerolog.Level, message string) NotificationAction
+	AndLog(logLevel Level, message string) NotificationAction
 	Send() error
 }
 
@@ -69,7 +67,7 @@ func prepareNotificationRequestDTO(dto *logcomapi.CreateNotificationRequestDto) 
 	}
 }
 
-func (n *notification[T]) AndLog(logLevel zerolog.Level, message string) NotificationAction {
+func (n *notification[T]) AndLog(logLevel Level, message string) NotificationAction {
 	ensureConsoleLog(&n.consoleLog)
 	n.consoleLog.logLevel = logLevel
 	n.consoleLog.message = message
@@ -78,13 +76,13 @@ func (n *notification[T]) AndLog(logLevel zerolog.Level, message string) Notific
 
 func (n *notification[T]) Send() error {
 	if err := sendNotification(n.ctx, n.eventCategory, n.message, n.targets, n.httpHeaders); err != nil {
-		log.Error().Msg("Failed to send notification")
+		logError.Println("Failed to send notification")
 		return err
 	}
 
 	if n.consoleLog != nil {
 		if err := sendConsoleLog(n.ctx, n.consoleLog.logLevel, n.consoleLog.message, n.httpHeaders); err != nil {
-			log.Error().Err(err).Msg("Failed to send console log")
+			logError.Printf("Failed to send console log: %v\n", err)
 		}
 	}
 
@@ -93,13 +91,13 @@ func (n *notification[T]) Send() error {
 
 func (n *notification[T]) UseService2ServiceAuthorization() NotificationAction {
 	if configuration.ClientCredentialProvider == nil {
-		log.Fatal().Msg("Client credential provider must be set")
+		logFatal.Println("Client credential provider must be set")
 		return n
 	}
 
 	clientCredential, err := configuration.ClientCredentialProvider.GetClientCredential()
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get client credential")
+		logError.Printf("Failed to get client credential: %v\n", err)
 		return n
 	}
 

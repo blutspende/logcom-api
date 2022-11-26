@@ -5,26 +5,32 @@ import (
 	"time"
 
 	"github.com/DRK-Blutspende-BaWueHe/logcom-api"
-	"github.com/DRK-Blutspende-BaWueHe/zerolog-for-logcom"
 )
 
-type ConsoleLog interface {
-}
+type Level int8
+
+const (
+	// DebugLevel defines debug log level.
+	DebugLevel Level = iota
+	// InfoLevel defines info log level.
+	InfoLevel
+	// WarnLevel defines warn log level.
+	WarnLevel
+	// ErrorLevel defines error log level.
+	ErrorLevel
+	// FatalLevel defines fatal log level.
+	FatalLevel
+	// PanicLevel defines panic log level.
+	PanicLevel
+
+	// TraceLevel defines trace log level.
+	TraceLevel Level = -1
+)
 
 type consoleLog struct {
 	ctx      context.Context
-	logLevel zerolog.Level
+	logLevel Level
 	message  string
-}
-
-type logComHook struct {
-	internalLogger zerolog.Logger
-}
-
-func (h logComHook) Run(e *zerolog.Event, ctx context.Context, level zerolog.Level, msg string) {
-	if err := sendConsoleLog(ctx, level, msg, nil); err != nil {
-		h.internalLogger.Error().Err(err).Msg("Failed to send console log to LogCom")
-	}
 }
 
 func prepareConsoleLogRequestDTO(dto *logcomapi.CreateConsoleLogRequestDto) {
