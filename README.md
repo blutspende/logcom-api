@@ -138,7 +138,7 @@ Example:
 ```go
 err := logcom.AuditCreation("MATERIAL", "ANTIG", newMaterialDTO).
     WithContext(ctx).
-    OnFailure(func(err error) {
+    OnComplete(func(err error) {
         if err != nil {
             _ = txConn.Rollback()
         }
@@ -214,7 +214,7 @@ Example:
 err := logcom.AuditModification("MATERIAL", "ANTIG", originalMaterialDTO, updatedMaterialDTO).
     WithContext(ctx).
     IgnoreChangeOf("modifiedBy", "modifiedAt").
-    OnFailure(func (err error) {
+    OnComplete(func (err error) {
         if err != nil {
             _ = txConn.Rollback()
         }
@@ -302,7 +302,7 @@ Example:
 ```go
 err := logcom.AuditDeletion("MATERIAL", "ANTIG", deletedMaterialDTO).
     WithContext(ctx).
-    OnFailure(func(err error) {
+    OnComplete(func(err error) {
         if err != nil {
             _ = txConn.Rollback()
         }
@@ -377,7 +377,7 @@ err := auditBatch.WithContext(ctx).
         - `IgnoreChangeOf(propertyNames ...string)`
         - `AndNotify()`
         - `AndLog(logLevel zerolog.Level, message string)`
-        - `OnFailure(onErrorCallback func(error))`
+        - `OnComplete(onCompleteCallback func(error))`
         - `Send()`
     2. Notification
         - `AndLog(logLevel zerolog.Level, message string)`
@@ -518,10 +518,10 @@ err := auditBatch.WithContext(ctx).
 
 - Initializes a notification builder
 
-`OnFailure(onErrorCallback func(error))`
+`OnComplete(onCompleteCallback func(error))`
 
 - Sets a callback function for handling errors (e.g. rolling back the transaction)
-- `onErrorCallback`: The callback function
+- `onCompleteCallback`: The callback function
 
 `Roles(targets ...string)`
 

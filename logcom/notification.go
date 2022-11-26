@@ -12,21 +12,22 @@ import (
 
 type NotificationAction interface {
 	AndLog(logLevel Level, message string) NotificationAction
+	OnComplete(onCompleteCallback func(error)) NotificationAction
 	Send() error
 }
 
-type NotificationInitializer interface {
+type NotificationConfiguration interface {
 	UseService2ServiceAuthorization() NotificationAction
 	WithBearerAuthorization(bearerToken string) NotificationAction
 	WithContext(ctx context.Context) NotificationAction
-	WithTransactionID(transactionID uuid.UUID) NotificationInitializer
+	WithTransactionID(transactionID uuid.UUID) NotificationConfiguration
 }
 
-type NotificationConfigurer[T any] interface {
+type NotificationOperation[T any] interface {
 	Message(message string) T
-	Roles(targets ...string) NotificationConfigurer[T]
-	Sessions(targets ...string) NotificationConfigurer[T]
-	Users(targets ...string) NotificationConfigurer[T]
+	Roles(targets ...string) NotificationOperation[T]
+	Sessions(targets ...string) NotificationOperation[T]
+	Users(targets ...string) NotificationOperation[T]
 }
 
 type NotificationMessage[T any] interface {
@@ -34,18 +35,20 @@ type NotificationMessage[T any] interface {
 }
 
 type notification[T any] struct {
-	ctx           context.Context
-	httpHeaders   http.Header
-	eventCategory string
-	message       string
-	targets       map[string][]string
-	consoleLog    *consoleLog
+	ctx                context.Context
+	httpHeaders        http.Header
+	eventCategory      string
+	message            string
+	targets            map[string][]string
+	consoleLog         *consoleLog
+	onCompleteCallback func(error)
 }
 
-func Notify() NotificationConfigurer[NotificationInitializer] {
-	return &notification[NotificationInitializer]{
-		eventCategory: "NOTIFICATION",
-		ctx:           context.TODO(),
+func Notify() NotificationOperation[NotificationConfiguration] {
+	return &notification[NotificationConfiguration]{
+		eventCategory:      "NOTIFICATION",
+		ctx:                context.TODO(),
+		onCompleteCallback: func(error) {},
 	}
 }
 
@@ -74,17 +77,26 @@ func (n *notification[T]) AndLog(logLevel Level, message string) NotificationAct
 	return n
 }
 
+func (n *notification[T]) OnComplete(onCompleteCallback func(error)) NotificationAction {
+	n.onCompleteCallback = onCompleteCallback
+	return n
+}
+
 func (n *notification[T]) Send() error {
-	if err := sendNotification(n.ctx, n.eventCategory, n.message, n.targets, n.httpHeaders); err != nil {
+	err := sendNotification(n.ctx, n.eventCategory, n.message, n.targets, n.httpHeaders)
+	if err != nil {
 		logError.Println("Failed to send notification")
+		n.onCompleteCallback(err)
 		return err
 	}
 
 	if n.consoleLog != nil {
-		if err := sendConsoleLog(n.ctx, n.consoleLog.logLevel, n.consoleLog.message, n.httpHeaders); err != nil {
+		if err = sendConsoleLog(n.ctx, n.consoleLog.logLevel, n.consoleLog.message, n.httpHeaders); err != nil {
 			logError.Printf("Failed to send console log: %v\n", err)
 		}
 	}
+
+	n.onCompleteCallback(err)
 
 	return nil
 }
@@ -118,23 +130,23 @@ func (n *notification[T]) WithContext(ctx context.Context) NotificationAction {
 	return n
 }
 
-func (n *notification[T]) WithTransactionID(transactionID uuid.UUID) NotificationInitializer {
+func (n *notification[T]) WithTransactionID(transactionID uuid.UUID) NotificationConfiguration {
 	ensureHTTPHeaders(&n.httpHeaders)
 	n.httpHeaders["X-Request-ID"] = []string{transactionID.String()}
 	return n
 }
 
-func (n *notification[T]) Roles(targets ...string) NotificationConfigurer[T] {
+func (n *notification[T]) Roles(targets ...string) NotificationOperation[T] {
 	n.transformToNotificationTargets("ROLE", targets...)
 	return n
 }
 
-func (n *notification[T]) Sessions(targets ...string) NotificationConfigurer[T] {
+func (n *notification[T]) Sessions(targets ...string) NotificationOperation[T] {
 	n.transformToNotificationTargets("SESSION", targets...)
 	return n
 }
 
-func (n *notification[T]) Users(targets ...string) NotificationConfigurer[T] {
+func (n *notification[T]) Users(targets ...string) NotificationOperation[T] {
 	n.transformToNotificationTargets("USER", targets...)
 	return n
 }

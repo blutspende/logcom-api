@@ -28,9 +28,9 @@ var batchedOperationList = []int{
 
 type AuditLogAction interface {
 	IgnoreChangeOf(propertyNames ...string) AuditLogAction
-	AndNotify() NotificationConfigurer[AuditLogAction]
-	OnFailure(onErrorCallback func(error)) AuditLogAction
+	AndNotify() NotificationOperation[AuditLogAction]
 	AndLog(logLevel Level, message string) AuditLogAction
+	OnComplete(onCompleteCallback func(error)) AuditLogAction
 	Send() error
 }
 
@@ -92,12 +92,13 @@ type auditLog[T any] struct {
 	consoleLog         *consoleLog
 	notification       *notification[T]
 	batchedAuditLogMap map[int]*AuditLogCollector
-	sendError          error
+	onCompleteCallback func(error)
 }
 
 func Audit() AuditLogOperation {
 	return &auditLog[AuditLogAction]{
-		ctx: context.TODO(),
+		ctx:                context.TODO(),
+		onCompleteCallback: func(error) {},
 	}
 }
 
@@ -269,10 +270,10 @@ func (al *auditLog[T]) IgnoreChangeOf(propertyNames ...string) AuditLogAction {
 	return al
 }
 
-func (al *auditLog[T]) AndNotify() NotificationConfigurer[AuditLogAction] {
+func (al *auditLog[T]) AndNotify() NotificationOperation[AuditLogAction] {
 	ensureNotification(&al.notification)
 	al.notification.eventCategory = "NOTIFICATION"
-	return interface{}(al).(NotificationConfigurer[AuditLogAction])
+	return interface{}(al).(NotificationOperation[AuditLogAction])
 }
 
 func (al *auditLog[T]) AndLog(logLevel Level, message string) AuditLogAction {
@@ -317,8 +318,8 @@ func (al *auditLog[T]) WithTransactionID(transactionID uuid.UUID) AuditLogConfig
 	return al
 }
 
-func (al *auditLog[T]) OnFailure(onErrorCallback func(error)) AuditLogAction {
-	onErrorCallback(al.sendError)
+func (al *auditLog[T]) OnComplete(onCompleteCallback func(error)) AuditLogAction {
+	al.onCompleteCallback = onCompleteCallback
 	return al
 }
 
@@ -331,7 +332,7 @@ func (al *auditLog[T]) Send() error {
 			err = sendAuditLogGroup(al.ctx, al, al.batchedAuditLogMap[operation], al.httpHeaders)
 			if err != nil {
 				logError.Println("Failed to send batched audit logs")
-				al.sendError = err
+				al.onCompleteCallback(err)
 				return err
 			}
 			isBatch = true
@@ -347,12 +348,12 @@ func (al *auditLog[T]) Send() error {
 		case "DELETION":
 			err = sendAuditLogWithDeletion(al.ctx, al.subject, al.subjectName, al.oldValue, al.httpHeaders)
 		default:
-			return errors.New("invalid audit operation: " + al.operation)
+			err = errors.New("invalid audit operation: " + al.operation)
 		}
 
 		if err != nil {
 			logError.Println("Failed to send audit log")
-			al.sendError = err
+			al.onCompleteCallback(err)
 			return err
 		}
 	}
@@ -360,16 +361,18 @@ func (al *auditLog[T]) Send() error {
 	if al.consoleLog != nil {
 		if err = sendNotification(al.ctx, al.notification.eventCategory, al.notification.message, al.notification.targets, al.httpHeaders); err != nil {
 			logError.Printf("Failed to send notification: %v\n", err)
-			al.sendError = err
 			// Todo: Maybe add it to a list for retry purpose
 		}
 	}
+
 	if al.notification != nil {
 		if err = sendConsoleLog(al.ctx, al.consoleLog.logLevel, al.consoleLog.message, al.httpHeaders); err != nil {
 			logError.Printf("Failed to send console log: %v\n", err)
-			al.sendError = err
 		}
 	}
+
+	al.onCompleteCallback(err)
+
 	return nil
 }
 
@@ -431,17 +434,17 @@ func (al *auditLog[T]) AddDeletion(subject, subjectName string, oldValue interfa
 	return al
 }
 
-func (al *auditLog[T]) Roles(targets ...string) NotificationConfigurer[T] {
+func (al *auditLog[T]) Roles(targets ...string) NotificationOperation[T] {
 	al.notification.Roles(targets...)
 	return al
 }
 
-func (al *auditLog[T]) Sessions(targets ...string) NotificationConfigurer[T] {
+func (al *auditLog[T]) Sessions(targets ...string) NotificationOperation[T] {
 	al.notification.Sessions(targets...)
 	return al
 }
 
-func (al *auditLog[T]) Users(targets ...string) NotificationConfigurer[T] {
+func (al *auditLog[T]) Users(targets ...string) NotificationOperation[T] {
 	al.notification.Users(targets...)
 	return al
 }
