@@ -358,14 +358,14 @@ func (al *auditLog[T]) Send() error {
 		}
 	}
 
-	if al.consoleLog != nil {
+	if al.notification != nil {
 		if err = sendNotification(al.ctx, al.notification.eventCategory, al.notification.message, al.notification.targets, al.httpHeaders); err != nil {
 			logError.Printf("Failed to send notification: %v\n", err)
 			// Todo: Maybe add it to a list for retry purpose
 		}
 	}
 
-	if al.notification != nil {
+	if al.consoleLog != nil {
 		if err = sendConsoleLog(al.ctx, al.consoleLog.logLevel, al.consoleLog.message, al.httpHeaders); err != nil {
 			logError.Printf("Failed to send console log: %v\n", err)
 		}
@@ -434,23 +434,23 @@ func (al *auditLog[T]) AddDeletion(subject, subjectName string, oldValue interfa
 	return al
 }
 
-func (al *auditLog[T]) Roles(targets ...string) NotificationOperation[T] {
+func (al *auditLog[T]) Roles(targets ...string) NotificationMessage[T] {
 	al.notification.Roles(targets...)
 	return al
 }
 
-func (al *auditLog[T]) Sessions(targets ...string) NotificationOperation[T] {
+func (al *auditLog[T]) Sessions(targets ...string) NotificationMessage[T] {
 	al.notification.Sessions(targets...)
 	return al
 }
 
-func (al *auditLog[T]) Users(targets ...string) NotificationOperation[T] {
+func (al *auditLog[T]) Users(targets ...string) NotificationMessage[T] {
 	al.notification.Users(targets...)
 	return al
 }
 
 func (al *auditLog[T]) Message(message string) T {
-	al.notification.Message(message)
+	al.notification.message = message
 	return interface{}(al).(T)
 }
 

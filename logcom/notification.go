@@ -24,13 +24,13 @@ type NotificationConfiguration interface {
 }
 
 type NotificationOperation[T any] interface {
-	Message(message string) T
-	Roles(targets ...string) NotificationOperation[T]
-	Sessions(targets ...string) NotificationOperation[T]
-	Users(targets ...string) NotificationOperation[T]
+	Roles(targets ...string) NotificationMessage[T]
+	Sessions(targets ...string) NotificationMessage[T]
+	Users(targets ...string) NotificationMessage[T]
 }
 
 type NotificationMessage[T any] interface {
+	NotificationOperation[T]
 	Message(message string) T
 }
 
@@ -136,17 +136,17 @@ func (n *notification[T]) WithTransactionID(transactionID uuid.UUID) Notificatio
 	return n
 }
 
-func (n *notification[T]) Roles(targets ...string) NotificationOperation[T] {
+func (n *notification[T]) Roles(targets ...string) NotificationMessage[T] {
 	n.transformToNotificationTargets("ROLE", targets...)
 	return n
 }
 
-func (n *notification[T]) Sessions(targets ...string) NotificationOperation[T] {
+func (n *notification[T]) Sessions(targets ...string) NotificationMessage[T] {
 	n.transformToNotificationTargets("SESSION", targets...)
 	return n
 }
 
-func (n *notification[T]) Users(targets ...string) NotificationOperation[T] {
+func (n *notification[T]) Users(targets ...string) NotificationMessage[T] {
 	n.transformToNotificationTargets("USER", targets...)
 	return n
 }
