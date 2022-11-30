@@ -2,6 +2,20 @@
 
 LogCom client and Swagger documentation
 
+- [Overview](#overview)
+- [Installation](#installation)
+- [Usage](#usage)
+    * [Init the client](#init-the-client)
+    * [Service-to-Service authorization](#service-to-service-authorization)
+    * [Console logging](#console-logging)
+    * [Audit logging](#audit-logging)
+    * [Notification](#notification)
+- [Builder usage](#builder-usage)
+    * [Steps](#steps)
+    * [Function descriptions](#function-descriptions)
+- [About the author](#author)
+- [Disclaimer](#disclaimer)
+
 ## Overview
 
 The API documentation can be found [**here**](docs/README.md)
@@ -18,7 +32,7 @@ go get -v github.com/DRK-Blutspende-BaWueHe/logcom-api
 
 The client initializes itself by default, only the `LOG_COM_URL` environment variable must be set.
 
-For fine-grained usage, call the `logcom.Init` function after the logger initialization.
+For fine-grained usage, call the `logcom.Init` function.
 
 ```go
 logcom.Init(logcom.Configuration{
@@ -29,8 +43,7 @@ logcom.Init(logcom.Configuration{
             return ginCtx.Request.Header
         }
         return http.Header{}
-    },
-}, &log.Logger)
+    })
 ```
 
 ### Service-to-Service authorization
@@ -61,47 +74,53 @@ WithBearerAuthorization(bearerToken string)
 
 ### Console logging
 
-For sending console logs to LogCom too, use one of these methods:
+#### One-shot sending
 
-- `SendContext()`
-  ```go
-  log.Error().(err).SendContext(c)
-  ```
+Functions to use:
 
-- `MsgContext(...)`
-  ```go
-  log.Debug().MsgContext(c, "Success")
-  ```
+- For simple message: `SendConsoleLog(ctx context.Context, logLevel Level, message string)`
 
-- `MsgfContext(...)`
-  ```go
-  log.Warn().MsgfContext(c, "Something went wrong: %v", err)
-  ```
+    - `ctx`: The context which contains the `Authorization` key and its value
+    - `logLevel`: The console log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3, Fatal=4, Panic=5)
+    - `message`: The console log message
 
-For sending custom console log only to LogCom, use one of these methods:
+    Example:
 
-- For simple message: `SendConsoleLog(...)`
-  ```go
-  SendConsoleLog(ctx, zerolog.ErrorLevel, "Something went wrong")
-  ```
+    ```go
+    SendConsoleLog(ctx, zerolog.ErrorLevel, "Something went wrong")
+    ```
 
-- For more customized message: `SendConsoleLogWithModel(...)`
-  ```go
-  SendConsoleLogWithModel(ctx, logcomapi.CreateConsoleLogRequestDto{
-      CreatedAt:     nil,
-      CreatedById:   nil,
-      CreatedByName: "",
-      Level:         0,
-      Message:       "",
-      Service:       "",
-  })
-  ```
+- For more customized message: `SendConsoleLogWithModel(ctx context.Context, model logcomapi.CreateConsoleLogRequestDto)`
 
-If a log is not intended to be sent to LogCom, use the default `zerolog` methods:
+    - `ctx`: The context which contains the `Authorization` key and its value
+    - `model`: The data model
 
-- `Send()`
-- `Msg(...)`
-- `Msgf(...)`
+    Example:
+
+    ```go
+    SendConsoleLogWithModel(ctx, logcomapi.CreateConsoleLogRequestDto{
+        CreatedAt:     nil,
+        CreatedById:   nil,
+        CreatedByName: "",
+        Level:         0,
+        Message:       "",
+        Service:       "",
+    })
+    ```
+
+#### Builder based
+
+Function to use: `logcom.Log()`
+
+Example:
+
+```go
+err := logcom.Log().
+	Level(logcom.DebugLevel).
+	Message("Debug log")
+    WithContext(ctx).
+    Send()
+```
 
 ### Audit logging
 
@@ -332,9 +351,40 @@ err := auditBatch.WithContext(ctx).
     Send()
 ```
 
+### Notification
+
+#### OneShot sending
+
+Function to use: `SendNotification(ctx context.Context, eventCategory string, message string, targets map[string][]string)`
+
+- `ctx`: The context which contains the `Authorization` key and its value
+- `eventCategory`: The category of the event (e.g. `NOTIFICATION`)
+- `message`: The notification message
+- `targets`: The desired range of users / roles / sessions to whom the notification should be sent (Key: `ROLE`, `SESSION`, `USER`; Value: list of targets)
+
+Example:
+
+```go
+err := logcom.SendNotification(ctx, "NOTIFICATION", "This is a notification for doctors", map[string][]string{"ROLE": {"doctor"}})
+```
+
+#### Builder based
+
+Function to use: `logcom.Notify()`
+
+Example:
+
+```go
+err := logcom.Notify().
+    Roles("doctor", "admin").
+    Message("Test notification").
+    WithContext(ctx).
+    Send()
+```
+
 ## Builder Usage
 
-### Steps:
+### Steps
 
 1. Initialization
     - `logcom.Audit()`
@@ -342,9 +392,14 @@ err := auditBatch.WithContext(ctx).
     - `logcom.AuditModification(subject, subjectName string, oldValue, newValue interface{})`
     - `logcom.AuditDeletion(subject, subjectName string, oldValue interface{})`
     - `logcom.Notify()`
+    - `logcom.Log()`
 
 2. Initialization sub-actions
-    1. Audit Log
+    1. Console Log
+        - `Level(level Level)`
+        - `Message(message string)`
+        - `MessageF(format string, params ...any)`
+    2. Audit Log
         - `Create(subject, subjectName string, newValue interface{})`
         - `Modify(subject, subjectName string, oldValue, newValue interface{})`
         - `Delete(subject, subjectName string, oldValue interface{})`
@@ -360,7 +415,7 @@ err := auditBatch.WithContext(ctx).
             - `AddCreation(subject, subjectName string, newValue interface{})`
             - `AddModification(subject, subjectName string, oldValue, newValue interface{})`
             - `AddDeletion(subject, subjectName string, oldValue interface{})`
-    2. Notification
+    3. Notification
         - `Message(message string)`
         - `Roles(targets ...string)`
         - `Sessions(targets ...string)`
@@ -373,14 +428,18 @@ err := auditBatch.WithContext(ctx).
     - `WithTransactionID(transactionID uuid.UUID)`
 
 4. Action
-    1. Audit Log
+    1. Console Log
+        - `OnComplete(onCompleteCallback func(error))`
+        - `Send()`
+    2. Audit Log
         - `IgnoreChangeOf(propertyNames ...string)`
         - `AndNotify()`
         - `AndLog(logLevel zerolog.Level, message string)`
         - `OnComplete(onCompleteCallback func(error))`
         - `Send()`
-    2. Notification
+    3. Notification
         - `AndLog(logLevel zerolog.Level, message string)`
+        - `OnComplete(onCompleteCallback func(error))`
         - `Send()`
 
 ### Function descriptions
@@ -495,10 +554,25 @@ err := auditBatch.WithContext(ctx).
 - Sets ignored properties of a subject for the modification operation
 - `propertyNames`: The ignored property names which are not considered as changes
 
+`Level(logLevel Level)`
+
+- Sets the log level of the console log
+- `logLevel`: The console log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3, Fatal=4, Panic=5)
+
+`Log()`
+
+- Initializes a console log builder
+
 `Message(message string)`
 
-- Sets the message of the notification
-- `message`: The notification message
+- Sets the message of the console log or notification
+- `message`: The console log or notification message
+
+`MessageF(format string, params ...any)`
+
+- Sets the formatted message of the console log
+- `format`: The formatted message
+- `params`: The message parameters
 
 `Modify(subject, subjectName string, oldValue, newValue interface{})`
 
