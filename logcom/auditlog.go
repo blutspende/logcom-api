@@ -54,14 +54,16 @@ type AuditLogOperation interface {
 type BatchedAuditLogOperation interface {
 	AuditLogConfiguration
 	CreateItem(subjectName string, newValue interface{}) BatchedAuditLogOperation
-	ModifyItem(subjectName string, oldValue, newValue interface{}) BatchedAuditLogOperation
+	ModifyItem(subjectName string, oldValue, newValue string) BatchedAuditLogOperation
+	ModifyItemWithModelChanges(subjectName string, changes []ModelChange) BatchedAuditLogOperation
 	DeleteItem(subjectName string, oldValue interface{}) BatchedAuditLogOperation
 }
 
 type GroupedModificationAuditLogOperation interface {
 	AuditLogConfiguration
 	AddCreation(subject, subjectName string, newValue interface{}) GroupedModificationAuditLogOperation
-	AddModification(subject, subjectName string, oldValue, newValue interface{}) GroupedModificationAuditLogOperation
+	AddModification(subject, subjectName string, oldValue, newValue string) GroupedModificationAuditLogOperation
+	AddModificationWithModelChanges(subject, subjectName string, changes []ModelChange) GroupedModificationAuditLogOperation
 	AddDeletion(subject, subjectName string, oldValue interface{}) GroupedModificationAuditLogOperation
 }
 
@@ -407,9 +409,15 @@ func (al *auditLog[T]) CreateItem(subjectName string, newValue interface{}) Batc
 	return al
 }
 
-func (al *auditLog[T]) ModifyItem(subjectName string, oldValue, newValue interface{}) BatchedAuditLogOperation {
+func (al *auditLog[T]) ModifyItem(subjectName string, oldValue, newValue string) BatchedAuditLogOperation {
 	al.ensureBatchedAuditLogs(batchedModification)
 	al.batchedAuditLogMap[batchedModification].AddModification(al.subject, subjectName, oldValue, newValue)
+	return al
+}
+
+func (al *auditLog[T]) ModifyItemWithModelChanges(subjectName string, changes []ModelChange) BatchedAuditLogOperation {
+	al.ensureBatchedAuditLogs(batchedModification)
+	al.batchedAuditLogMap[batchedModification].AddModificationWithModelChanges(al.subject, subjectName, changes)
 	return al
 }
 
@@ -424,8 +432,13 @@ func (al *auditLog[T]) AddCreation(subject, subjectName string, newValue interfa
 	return al
 }
 
-func (al *auditLog[T]) AddModification(subject, subjectName string, oldValue, newValue interface{}) GroupedModificationAuditLogOperation {
+func (al *auditLog[T]) AddModification(subject, subjectName string, oldValue, newValue string) GroupedModificationAuditLogOperation {
 	al.batchedAuditLogMap[batchedModification].AddModification(subject, subjectName, oldValue, newValue)
+	return al
+}
+
+func (al *auditLog[T]) AddModificationWithModelChanges(subject, subjectName string, changes []ModelChange) GroupedModificationAuditLogOperation {
+	al.batchedAuditLogMap[batchedModification].AddModificationWithModelChanges(subject, subjectName, changes)
 	return al
 }
 
@@ -468,6 +481,9 @@ func (al *auditLog[T]) ensureIgnoredProperties() {
 }
 
 func (c *AuditLogCollector) AddCreation(itemSubject, itemSubjectName string, newValue interface{}) {
+	if newValue == nil {
+		newValue = ""
+	}
 	c.Add(logcomapi.CreateAuditLogRequestDto{
 		Category:    "CREATION",
 		NewValue:    stringify(newValue),
@@ -476,17 +492,32 @@ func (c *AuditLogCollector) AddCreation(itemSubject, itemSubjectName string, new
 	})
 }
 
-func (c *AuditLogCollector) AddModification(itemSubject, itemSubjectName string, oldValue, newValue interface{}) {
+func (c *AuditLogCollector) AddModification(itemSubject, itemSubjectName string, oldValue, newValue string) {
 	c.Add(logcomapi.CreateAuditLogRequestDto{
 		Category:    "MODIFICATION",
-		NewValue:    stringify(newValue),
-		OldValue:    stringify(oldValue),
+		NewValue:    newValue,
+		OldValue:    oldValue,
 		Subject:     itemSubject,
 		SubjectName: itemSubjectName,
 	})
 }
 
+func (c *AuditLogCollector) AddModificationWithModelChanges(itemSubject, itemSubjectName string, changes []ModelChange) {
+	dto := logcomapi.CreateAuditLogRequestDto{
+		Category:    "MODIFICATION",
+		Subject:     itemSubject,
+		SubjectName: itemSubjectName,
+	}
+
+	transformModelChangesToDTO(&dto, changes)
+
+	c.Add(dto)
+}
+
 func (c *AuditLogCollector) AddDeletion(itemSubject, itemSubjectName string, oldValue interface{}) {
+	if oldValue == nil {
+		oldValue = ""
+	}
 	c.Add(logcomapi.CreateAuditLogRequestDto{
 		Category:    "DELETION",
 		OldValue:    stringify(oldValue),
@@ -515,15 +546,21 @@ func (c *AuditLogCollector) get() logcomapi.CreateAuditLogRequestDto {
 	for subjectAsKey, subjectNameGroupAsValue := range c.auditLogs {
 		for subjectNameAsKey, auditLogList := range subjectNameGroupAsValue {
 			for _, auditLog := range auditLogList {
-				c.parentAuditLog.GroupedChanges = append(c.parentAuditLog.GroupedChanges, logcomapi.NewAuditLogChangeDto{
-					Category:            auditLog.Category,
-					Message:             auditLog.Message,
-					NewValue:            auditLog.NewValue,
-					OldValue:            auditLog.OldValue,
-					Subject:             subjectAsKey,
-					SubjectName:         subjectNameAsKey,
-					SubjectPropertyName: auditLog.SubjectPropertyName,
-				})
+				if len(auditLog.GroupedChanges) > 0 {
+					for _, nestedAuditLogChange := range auditLog.GroupedChanges {
+						c.parentAuditLog.GroupedChanges = append(c.parentAuditLog.GroupedChanges, nestedAuditLogChange)
+					}
+				} else {
+					c.parentAuditLog.GroupedChanges = append(c.parentAuditLog.GroupedChanges, logcomapi.NewAuditLogChangeDto{
+						Category:            auditLog.Category,
+						Message:             auditLog.Message,
+						NewValue:            auditLog.NewValue,
+						OldValue:            auditLog.OldValue,
+						Subject:             subjectAsKey,
+						SubjectName:         subjectNameAsKey,
+						SubjectPropertyName: auditLog.SubjectPropertyName,
+					})
+				}
 
 				if hasSameCategory && seenCategory != auditLog.Category && seenCategory != "" {
 					hasSameCategory = false

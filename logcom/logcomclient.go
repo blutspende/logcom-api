@@ -303,6 +303,13 @@ func sendAuditLogWithCreation(ctx context.Context, subject, subjectName string, 
 }
 
 func sendAuditLogWithModification(ctx context.Context, subject, subjectName string, oldValue, newValue interface{}, extraHeaders http.Header, ignoredProperties ...string) error {
+	if oldValue == nil && newValue == nil {
+		oldValue = ""
+		newValue = ""
+	} else if oldValue == nil || newValue == nil {
+		return errors.New("oldValue and newValue are required")
+	}
+
 	if isPrimitiveType(oldValue) {
 		return SendAuditLog(ctx, logcomapi.CreateAuditLogRequestDto{
 			Category:    "MODIFICATION",
@@ -340,26 +347,7 @@ func sendAuditLogWithModificationModelChanges(ctx context.Context, subject, subj
 		SubjectName: subjectName,
 	}
 
-	if changesCount := len(changes); changesCount > 1 {
-		changesDTO := make([]logcomapi.NewAuditLogChangeDto, changesCount)
-
-		for i, change := range changes {
-			changesDTO[i] = logcomapi.NewAuditLogChangeDto{
-				Category:            dto.Category,
-				NewValue:            stringify(change.NewValue),
-				OldValue:            stringify(change.OldValue),
-				Subject:             dto.Subject,
-				SubjectName:         dto.SubjectName,
-				SubjectPropertyName: change.PropertyName,
-			}
-		}
-
-		dto.GroupedChanges = changesDTO
-	} else if changesCount > 0 {
-		dto.NewValue = stringify(changes[0].NewValue)
-		dto.OldValue = stringify(changes[0].OldValue)
-		dto.SubjectPropertyName = changes[0].PropertyName
-	}
+	transformModelChangesToDTO(&dto, changes)
 
 	return sendAuditLog(ctx, dto, extraHeaders)
 }
@@ -465,6 +453,29 @@ func requestConfigurer(ctx context.Context, headers http.Header) func(*http.Requ
 		if authorization != "" {
 			request.Header.Add("Authorization", authorization)
 		}
+	}
+}
+
+func transformModelChangesToDTO(targetDTO *logcomapi.CreateAuditLogRequestDto, changes []ModelChange) {
+	if changesCount := len(changes); changesCount > 1 {
+		changesDTO := make([]logcomapi.NewAuditLogChangeDto, changesCount)
+
+		for i, change := range changes {
+			changesDTO[i] = logcomapi.NewAuditLogChangeDto{
+				Category:            targetDTO.Category,
+				NewValue:            stringify(change.NewValue),
+				OldValue:            stringify(change.OldValue),
+				Subject:             targetDTO.Subject,
+				SubjectName:         targetDTO.SubjectName,
+				SubjectPropertyName: change.PropertyName,
+			}
+		}
+
+		targetDTO.GroupedChanges = changesDTO
+	} else if changesCount > 0 {
+		targetDTO.NewValue = stringify(changes[0].NewValue)
+		targetDTO.OldValue = stringify(changes[0].OldValue)
+		targetDTO.SubjectPropertyName = changes[0].PropertyName
 	}
 }
 
