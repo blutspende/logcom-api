@@ -2,7 +2,7 @@
 swagger: "2.0"
 info:
   description: "LogCom Swagger documentation"
-  version: "1.2.6"
+  version: "1.2.7"
   title: "LogCom API"
   contact:
     name: "Bloodlab-dev"
@@ -388,7 +388,6 @@ definitions:
         type: "string"
         format: "uuid"
         description: "The user's ID who created"
-        x-nullable: true
       createdByName:
         type: "string"
         description: "The user's name who created"
@@ -563,7 +562,6 @@ definitions:
         type: "string"
         format: "uuid"
         description: "The user's ID who created"
-        x-nullable: true
       createdByName:
         type: "string"
         description: "The user's name who created"
@@ -656,7 +654,6 @@ definitions:
         type: "string"
         format: "uuid"
         description: "The user's ID who created"
-        x-nullable: true
       createdByName:
         type: "string"
         description: "The user's name who created"
@@ -704,7 +701,6 @@ definitions:
         type: "string"
         format: "uuid"
         description: "The user's ID who created"
-        x-nullable: true
       createdByName:
         type: "string"
         description: "The user's name who created"
@@ -730,7 +726,6 @@ definitions:
         type: "string"
         format: "uuid"
         description: "The user's ID who created"
-        x-nullable: true
       createdByName:
         type: "string"
         description: "The user's name who created"
@@ -784,7 +779,6 @@ definitions:
         type: "string"
         format: "uuid"
         description: "The user's ID who created"
-        x-nullable: true
       createdByName:
         type: "string"
         description: "The user's name who created"
