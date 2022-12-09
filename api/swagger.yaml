@@ -2,7 +2,6 @@
 swagger: "2.0"
 info:
   description: "LogCom Swagger documentation"
-  version: "1.0.80"
   title: "LogCom API"
   contact:
     name: "Bloodlab-dev"
@@ -29,16 +28,6 @@ paths:
         required: false
         type: "string"
         x-exportParamName: "Filter"
-        x-optionalDataType: "String"
-      - name: "direction"
-        in: "query"
-        description: "The sorting direction"
-        required: false
-        type: "string"
-        enum:
-        - "asc"
-        - "desc"
-        x-exportParamName: "Direction"
         x-optionalDataType: "String"
       - name: "page"
         in: "query"
@@ -94,16 +83,6 @@ paths:
         required: false
         type: "string"
         x-exportParamName: "Filter"
-        x-optionalDataType: "String"
-      - name: "direction"
-        in: "query"
-        description: "The sorting direction"
-        required: false
-        type: "string"
-        enum:
-        - "asc"
-        - "desc"
-        x-exportParamName: "Direction"
         x-optionalDataType: "String"
       - name: "page"
         in: "query"
@@ -226,16 +205,6 @@ paths:
         required: false
         type: "string"
         x-exportParamName: "Filter"
-        x-optionalDataType: "String"
-      - name: "direction"
-        in: "query"
-        description: "The sorting direction"
-        required: false
-        type: "string"
-        enum:
-        - "asc"
-        - "desc"
-        x-exportParamName: "Direction"
         x-optionalDataType: "String"
       - name: "page"
         in: "query"
@@ -602,9 +571,7 @@ definitions:
         format: "uuid"
         description: "The ID"
       level:
-        type: "integer"
-        description: "The log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3,\
-          \ Fatal=4, Panic=5)"
+        $ref: "#/definitions/ConsoleLogDTO_level"
       message:
         type: "string"
         description: "The log message"
@@ -618,7 +585,7 @@ definitions:
     example:
       createdAt: "2000-01-23T04:56:07.000+00:00"
       createdByName: "createdByName"
-      level: 0
+      level: {}
       requestId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
       service: "service"
       id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
@@ -656,7 +623,7 @@ definitions:
       items:
       - createdAt: "2000-01-23T04:56:07.000+00:00"
         createdByName: "createdByName"
-        level: 0
+        level: {}
         requestId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         service: "service"
         id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
@@ -664,7 +631,7 @@ definitions:
         createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
       - createdAt: "2000-01-23T04:56:07.000+00:00"
         createdByName: "createdByName"
-        level: 0
+        level: {}
         requestId: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         service: "service"
         id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
@@ -741,9 +708,7 @@ definitions:
         type: "string"
         description: "The user's name who created"
       level:
-        type: "integer"
-        description: "The log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3,\
-          \ Fatal=4, Panic=5)"
+        $ref: "#/definitions/ConsoleLogDTO_level"
       message:
         type: "string"
         description: "The log message"
@@ -769,11 +734,7 @@ definitions:
         type: "string"
         description: "The user's name who created"
       eventCategory:
-        type: "string"
-        description: "The notification event category"
-        default: "NOTIFICATION"
-        enum:
-        - "NOTIFICATION"
+        $ref: "#/definitions/CreateNotificationRequestDTO_eventCategory"
       message:
         type: "string"
         description: "The log message"
@@ -837,11 +798,7 @@ definitions:
         type: "string"
         description: "The service which sent the notification"
       status:
-        type: "string"
-        description: "The status of the message"
-        enum:
-        - "SEEN"
-        - "SENT"
+        $ref: "#/definitions/NotificationMessageDTO_status"
     example:
       createdAt: "2000-01-23T04:56:07.000+00:00"
       createdByName: "createdByName"
@@ -849,7 +806,7 @@ definitions:
       id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
       message: "message"
       createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-      status: "SEEN"
+      status: {}
   NotificationMessageListPageResponse:
     type: "object"
     properties:
@@ -886,14 +843,14 @@ definitions:
         id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         message: "message"
         createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-        status: "SEEN"
+        status: {}
       - createdAt: "2000-01-23T04:56:07.000+00:00"
         createdByName: "createdByName"
         service: "service"
         id: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
         message: "message"
         createdById: "046b6c7f-0b8a-43b9-b35d-6489e6daee91"
-        status: "SEEN"
+        status: {}
   UpdateNotificationMessageRequestDTO:
     type: "object"
     properties:
@@ -919,3 +876,59 @@ definitions:
       - "apiVersion"
       service: "service"
       status: "status"
+  models.LogLevel:
+    type: "integer"
+    enum:
+    - "0"
+    - "1"
+    - "2"
+    - "3"
+    - "4"
+    - "5"
+    - "-1"
+    x-enum-varnames:
+    - "Debug"
+    - "Info"
+    - "Warning"
+    - "Error"
+    - "Fatal"
+    - "Panic"
+    - "Trace"
+  models.NotificationEventCategory:
+    type: "string"
+    enum:
+    - "NOTIFICATION"
+    x-enum-varnames:
+    - "Notification"
+  models.NotificationStatus:
+    type: "string"
+    enum:
+    - "ERROR"
+    - "NEW"
+    - "SEEN"
+    - "SENT"
+    x-enum-varnames:
+    - "NotificationError"
+    - "NotificationNew"
+    - "NotificationSeen"
+    - "NotificationSent"
+  models.SortDirection:
+    type: "string"
+    enum:
+    - "asc"
+    - "desc"
+    - ""
+    x-enum-varnames:
+    - "SortAsc"
+    - "SortDesc"
+    - "SortNone"
+  ConsoleLogDTO_level:
+    type: "object"
+    description: "The log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3, Fatal=4,\
+      \ Panic=5)"
+  CreateNotificationRequestDTO_eventCategory:
+    type: "object"
+    description: "The notification event category"
+  NotificationMessageDTO_status:
+    type: "object"
+    description: "The status of the message"

@@ -10,7 +10,6 @@
 
 package logcomapi
 
-type UpdateNotificationMessageRequestDto struct {
-	// The status of the message (only the \"SEEN\" status is supported)
-	Status string `json:"status,omitempty"`
+// The notification event category
+type CreateNotificationRequestDtoEventCategory struct {
 }

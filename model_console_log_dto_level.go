@@ -10,7 +10,6 @@
 
 package logcomapi
 
-type UpdateNotificationMessageRequestDto struct {
-	// The status of the message (only the \"SEEN\" status is supported)
-	Status string `json:"status,omitempty"`
+// The log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3, Fatal=4, Panic=5)
+type ConsoleLogDtoLevel struct {
 }

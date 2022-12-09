@@ -10,7 +10,11 @@
 
 package logcomapi
 
-type UpdateNotificationMessageRequestDto struct {
-	// The status of the message (only the \"SEEN\" status is supported)
-	Status string `json:"status,omitempty"`
-}
+type ModelsSortDirection string
+
+// List of models.SortDirection
+const (
+	ASC ModelsSortDirection = "asc"
+	DESC ModelsSortDirection = "desc"
+	EMPTY ModelsSortDirection = ""
+)

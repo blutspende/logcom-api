@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **Id** | [***uuid.UUID**](uuid.UUID.md) | The ID | [optional] [default to null]
 **Message** | **string** | The notification message | [optional] [default to null]
 **Service** | **string** | The service which sent the notification | [optional] [default to null]
-**Status** | **string** | The status of the message | [optional] [default to null]
+**Status** | [***NotificationMessageDtoStatus**](NotificationMessageDTO_status.md) |  | [optional] [default to null]
 
 [[Back to Model list]](README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

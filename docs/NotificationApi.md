@@ -61,7 +61,6 @@ Name | Type | Description  | Notes
 
 
  **filter** | **optional.String**| The search term | 
- **direction** | **optional.String**| The sorting direction | 
  **sort** | **optional.String**| The sorting parameter | 
 
 ### Return type
