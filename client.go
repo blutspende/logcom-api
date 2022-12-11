@@ -3,7 +3,7 @@ LogCom API
 
 LogCom Swagger documentation
 
-API version: 1.2.8
+API version: 1.2.9
 Contact: laborit@blutspende.de
 */
 
@@ -42,7 +42,7 @@ var (
 	xmlCheck  = regexp.MustCompile(`(?i:(?:application|text)/xml)`)
 )
 
-// APIClient manages communication with the LogCom API API v1.2.8
+// APIClient manages communication with the LogCom API API v1.2.9
 // In most cases there should be only one, shared, APIClient.
 type APIClient struct {
 	cfg    *Configuration
