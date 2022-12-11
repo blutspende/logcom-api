@@ -1,6 +1,6 @@
 # \ConsoleLogApi
 
-All URIs are relative to *https://localhost/api*
+All URIs are relative to */api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
@@ -8,18 +8,52 @@ Method | HTTP request | Description
 [**GetConsoleLogsV1**](ConsoleLogApi.md#GetConsoleLogsV1) | **Get** /v1/console-logs | Get console logs
 
 
-# **CreateConsoleLogV1Int**
-> CreateConsoleLogV1Int(ctx, model)
+
+## CreateConsoleLogV1Int
+
+> CreateConsoleLogV1Int(ctx).Model(model).Execute()
+
 Create console log
 
-Creates a new console log
 
-### Required Parameters
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    model := *openapiclient.NewCreateConsoleLogRequestDTO(map[string][]openapiclient.LogLevel{ ... }, "Message_example", "Service_example") // CreateConsoleLogRequestDTO | The console log DTO
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.ConsoleLogApi.CreateConsoleLogV1Int(context.Background()).Model(model).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ConsoleLogApi.CreateConsoleLogV1Int``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiCreateConsoleLogV1IntRequest struct via the builder pattern
+
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **model** | [**CreateConsoleLogRequestDto**](CreateConsoleLogRequestDto.md)| The console log DTO | 
+ **model** | [**CreateConsoleLogRequestDTO**](CreateConsoleLogRequestDTO.md) | The console log DTO | 
 
 ### Return type
 
@@ -31,35 +65,67 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
- - **Accept**: Not defined
+- **Content-Type**: application/json
+- **Accept**: Not defined
 
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints)
+[[Back to Model list]](README.md#documentation-for-models)
+[[Back to README]](README.md)
 
-# **GetConsoleLogsV1**
-> ConsoleLogListPageResponse GetConsoleLogsV1(ctx, page, pageSize, optional)
+
+## GetConsoleLogsV1
+
+> ConsoleLogListPageResponse GetConsoleLogsV1(ctx).Page(page).PageSize(pageSize).Filter(filter).Sort(sort).Execute()
+
 Get console logs
 
-Gets all console log
 
-### Required Parameters
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    page := int32(56) // int32 | The desired page number (default to 0)
+    pageSize := int32(56) // int32 | The desired number of items per page (default to 25)
+    filter := "filter_example" // string | The search term (optional)
+    sort := "sort_example" // string | The sorting parameter (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.ConsoleLogApi.GetConsoleLogsV1(context.Background()).Page(page).PageSize(pageSize).Filter(filter).Sort(sort).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `ConsoleLogApi.GetConsoleLogsV1``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetConsoleLogsV1`: ConsoleLogListPageResponse
+    fmt.Fprintf(os.Stdout, "Response from `ConsoleLogApi.GetConsoleLogsV1`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetConsoleLogsV1Request struct via the builder pattern
+
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **page** | **int32**| The desired page number | [default to 0]
-  **pageSize** | **int32**| The desired number of items per page | [default to 25]
- **optional** | ***ConsoleLogApiGetConsoleLogsV1Opts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-Optional parameters are passed through a pointer to a ConsoleLogApiGetConsoleLogsV1Opts struct
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
-
- **filter** | **optional.String**| The search term | 
- **sort** | **optional.String**| The sorting parameter | 
+ **page** | **int32** | The desired page number | [default to 0]
+ **pageSize** | **int32** | The desired number of items per page | [default to 25]
+ **filter** | **string** | The search term | 
+ **sort** | **string** | The sorting parameter | 
 
 ### Return type
 
@@ -71,8 +137,10 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json
 
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints)
+[[Back to Model list]](README.md#documentation-for-models)
+[[Back to README]](README.md)
 

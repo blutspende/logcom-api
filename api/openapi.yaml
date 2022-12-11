@@ -1,0 +1,999 @@
+openapi: 3.0.1
+info:
+  contact:
+    email: laborit@blutspende.de
+    name: Bloodlab-dev
+    url: https://bloodlab.org
+  description: LogCom Swagger documentation
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: LogCom API
+  version: 1.2.8
+servers:
+- url: /api
+paths:
+  /v1/audit-logs:
+    get:
+      description: Gets all audit log
+      operationId: GetAuditLogsV1
+      parameters:
+      - description: The search term
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: The desired page number
+        in: query
+        name: page
+        required: true
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+      - description: The desired number of items per page
+        in: query
+        name: pageSize
+        required: true
+        schema:
+          default: 25
+          minimum: 0
+          type: integer
+      - description: The sorting parameter
+        in: query
+        name: sort
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogListPageResponse'
+          description: OK
+        "400":
+          content: {}
+          description: Bad request
+        "401":
+          content: {}
+          description: Unauthorized
+        "403":
+          content: {}
+          description: Forbidden
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Get audit logs
+      tags:
+      - AuditLog
+  /v1/console-logs:
+    get:
+      description: Gets all console log
+      operationId: GetConsoleLogsV1
+      parameters:
+      - description: The search term
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: The desired page number
+        in: query
+        name: page
+        required: true
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+      - description: The desired number of items per page
+        in: query
+        name: pageSize
+        required: true
+        schema:
+          default: 25
+          minimum: 0
+          type: integer
+      - description: The sorting parameter
+        in: query
+        name: sort
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsoleLogListPageResponse'
+          description: OK
+        "400":
+          content: {}
+          description: Bad request
+        "401":
+          content: {}
+          description: Unauthorized
+        "403":
+          content: {}
+          description: Forbidden
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Get console logs
+      tags:
+      - ConsoleLog
+  /v1/health:
+    get:
+      description: Shows if the service is running or not
+      operationId: GetHealthV1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+          description: OK
+      summary: Service health check
+      tags:
+      - Health
+  /v1/int/audit-logs:
+    post:
+      description: Creates a new audit log
+      operationId: CreateAuditLogV1Int
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuditLogRequestDTO'
+        description: The audit log DTO
+        required: true
+      responses:
+        "204":
+          content: {}
+          description: No content
+        "400":
+          content: {}
+          description: Bad request
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Create audit log
+      tags:
+      - AuditLog
+      x-codegen-request-body-name: model
+  /v1/int/console-logs:
+    post:
+      description: Creates a new console log
+      operationId: CreateConsoleLogV1Int
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConsoleLogRequestDTO'
+        description: The console log DTO
+        required: true
+      responses:
+        "204":
+          content: {}
+          description: No content
+        "400":
+          content: {}
+          description: Bad request
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Create console log
+      tags:
+      - ConsoleLog
+      x-codegen-request-body-name: model
+  /v1/notification-messages:
+    get:
+      description: Gets all notification message
+      operationId: GetNotificationMessagesV1
+      parameters:
+      - description: The search term
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: The desired page number
+        in: query
+        name: page
+        required: true
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
+      - description: The desired number of items per page
+        in: query
+        name: pageSize
+        required: true
+        schema:
+          default: 25
+          minimum: 0
+          type: integer
+      - description: The sorting parameter
+        in: query
+        name: sort
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationMessageListPageResponse'
+          description: OK
+        "400":
+          content: {}
+          description: Bad request
+        "401":
+          content: {}
+          description: Unauthorized
+        "403":
+          content: {}
+          description: Forbidden
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Get notification messages
+      tags:
+      - Notification
+  /v1/notification-messages/peek:
+    get:
+      description: Gets portion of the notification messages
+      operationId: PeekNotificationMessagesV1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationMessageListPageResponse'
+          description: OK
+        "400":
+          content: {}
+          description: Bad request
+        "401":
+          content: {}
+          description: Unauthorized
+        "403":
+          content: {}
+          description: Forbidden
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Peek notification messages
+      tags:
+      - Notification
+  /v1/notification-messages/{id}:
+    patch:
+      description: Updates a notification message by the optionally provided properties
+      operationId: UpdateNotificationMessageV1
+      parameters:
+      - description: Message ID
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNotificationMessageRequestDTO'
+        description: The updated notification DTO
+        required: true
+      responses:
+        "204":
+          content: {}
+          description: No content
+        "400":
+          content: {}
+          description: Bad request
+        "404":
+          content: {}
+          description: Not found
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Update notification message
+      tags:
+      - Notification
+      x-codegen-request-body-name: model
+  /v1/notifications:
+    post:
+      description: Creates a new notification
+      operationId: CreateNotificationV1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNotificationRequestDTO'
+        description: The notification DTO
+        required: true
+      responses:
+        "204":
+          content: {}
+          description: No content
+        "400":
+          content: {}
+          description: Bad request
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Create notification
+      tags:
+      - Notification
+      x-codegen-request-body-name: model
+components:
+  schemas:
+    AuditLogChangeDTO:
+      example:
+        newValue: newValue
+        subjectPropertyName: subjectPropertyName
+        subject: subject
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        oldValue: oldValue
+        category: category
+        message: message
+        subjectName: subjectName
+      properties:
+        category:
+          description: The category of the change
+          type: string
+        id:
+          description: The ID
+          format: uuid
+          type: string
+        message:
+          description: The message
+          type: string
+        newValue:
+          description: The new value
+          type: string
+        oldValue:
+          description: The old value
+          type: string
+        subject:
+          description: The short description of the change
+          type: string
+        subjectName:
+          description: The name of the subject
+          type: string
+        subjectPropertyName:
+          description: The property name of the subject
+          type: string
+      type: object
+    AuditLogDTO:
+      example:
+        createdByName: createdByName
+        newValue: newValue
+        subject: subject
+        message: message
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        subjectPropertyName: subjectPropertyName
+        requestId: requestId
+        groupedChanges:
+        - newValue: newValue
+          subjectPropertyName: subjectPropertyName
+          subject: subject
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          oldValue: oldValue
+          category: category
+          message: message
+          subjectName: subjectName
+        - newValue: newValue
+          subjectPropertyName: subjectPropertyName
+          subject: subject
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          oldValue: oldValue
+          category: category
+          message: message
+          subjectName: subjectName
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        oldValue: oldValue
+        category: category
+        serviceAffected: serviceAffected
+        createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        serviceCreated: serviceCreated
+        subjectName: subjectName
+      properties:
+        category:
+          description: The category of the change
+          type: string
+        createdAt:
+          description: The creation timestamp
+          format: date-time
+          type: string
+        createdById:
+          description: The user's ID who created
+          format: uuid
+          type: string
+        createdByName:
+          description: The user's name who created
+          type: string
+        groupedChanges:
+          description: The grouped changes
+          items:
+            $ref: '#/components/schemas/AuditLogChangeDTO'
+          type: array
+        id:
+          description: The ID
+          format: uuid
+          type: string
+        message:
+          description: The message
+          type: string
+        newValue:
+          description: The new value
+          type: string
+        oldValue:
+          description: The old value
+          type: string
+        requestId:
+          description: The request ID making dependent logs trackable
+          type: string
+        serviceAffected:
+          description: The service which the change affects
+          type: string
+        serviceCreated:
+          description: The service which created
+          type: string
+        subject:
+          description: The subject of the change
+          type: string
+        subjectName:
+          description: The name of the subject
+          type: string
+        subjectPropertyName:
+          description: The property name of the subject
+          type: string
+      type: object
+    AuditLogListPageResponse:
+      example:
+        totalPages: 2
+        pageSize: 50
+        currentPage: 1
+        totalCount: 69
+        items:
+        - createdByName: createdByName
+          newValue: newValue
+          subject: subject
+          message: message
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          subjectPropertyName: subjectPropertyName
+          requestId: requestId
+          groupedChanges:
+          - newValue: newValue
+            subjectPropertyName: subjectPropertyName
+            subject: subject
+            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            oldValue: oldValue
+            category: category
+            message: message
+            subjectName: subjectName
+          - newValue: newValue
+            subjectPropertyName: subjectPropertyName
+            subject: subject
+            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            oldValue: oldValue
+            category: category
+            message: message
+            subjectName: subjectName
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          oldValue: oldValue
+          category: category
+          serviceAffected: serviceAffected
+          createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          serviceCreated: serviceCreated
+          subjectName: subjectName
+        - createdByName: createdByName
+          newValue: newValue
+          subject: subject
+          message: message
+          createdAt: 2000-01-23T04:56:07.000+00:00
+          subjectPropertyName: subjectPropertyName
+          requestId: requestId
+          groupedChanges:
+          - newValue: newValue
+            subjectPropertyName: subjectPropertyName
+            subject: subject
+            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            oldValue: oldValue
+            category: category
+            message: message
+            subjectName: subjectName
+          - newValue: newValue
+            subjectPropertyName: subjectPropertyName
+            subject: subject
+            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+            oldValue: oldValue
+            category: category
+            message: message
+            subjectName: subjectName
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          oldValue: oldValue
+          category: category
+          serviceAffected: serviceAffected
+          createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          serviceCreated: serviceCreated
+          subjectName: subjectName
+      properties:
+        currentPage:
+          description: The actual page number
+          example: 1
+          type: integer
+        items:
+          description: The items
+          items:
+            $ref: '#/components/schemas/AuditLogDTO'
+          type: array
+        pageSize:
+          description: The number of items per page
+          example: 50
+          type: integer
+        totalCount:
+          description: The total count of items
+          example: 69
+          type: integer
+        totalPages:
+          description: The total pages
+          example: 2
+          type: integer
+      type: object
+    ConsoleLogDTO:
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        createdByName: createdByName
+        level: "{}"
+        requestId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        service: service
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        message: message
+        createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+      properties:
+        createdAt:
+          description: The log timestamp
+          format: date-time
+          type: string
+        createdById:
+          description: The user's ID who created
+          format: uuid
+          type: string
+        createdByName:
+          description: The user's name who created
+          type: string
+        id:
+          description: The ID
+          format: uuid
+          type: string
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LogLevel'
+          description: "The log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3,\
+            \ Fatal=4, Panic=5)"
+          type: object
+        message:
+          description: The log message
+          type: string
+        requestId:
+          description: The request ID making dependent logs trackable
+          format: uuid
+          type: string
+        service:
+          description: The service which sent the log
+          type: string
+      type: object
+    ConsoleLogListPageResponse:
+      example:
+        totalPages: 2
+        pageSize: 50
+        currentPage: 1
+        totalCount: 69
+        items:
+        - createdAt: 2000-01-23T04:56:07.000+00:00
+          createdByName: createdByName
+          level: "{}"
+          requestId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          service: service
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          message: message
+          createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        - createdAt: 2000-01-23T04:56:07.000+00:00
+          createdByName: createdByName
+          level: "{}"
+          requestId: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          service: service
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          message: message
+          createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+      properties:
+        currentPage:
+          description: The actual page number
+          example: 1
+          type: integer
+        items:
+          description: The items
+          items:
+            $ref: '#/components/schemas/ConsoleLogDTO'
+          type: array
+        pageSize:
+          description: The number of items per page
+          example: 50
+          type: integer
+        totalCount:
+          description: The total count of items
+          example: 69
+          type: integer
+        totalPages:
+          description: The total pages
+          example: 2
+          type: integer
+      type: object
+    CreateAuditLogChangeDTO:
+      example:
+        newValue: newValue
+        subjectPropertyName: subjectPropertyName
+        subject: subject
+        oldValue: oldValue
+        category: category
+        message: message
+        subjectName: subjectName
+      properties:
+        category:
+          description: The category of the change
+          type: string
+        message:
+          description: The message
+          type: string
+        newValue:
+          description: The new value
+          type: string
+        oldValue:
+          description: The old value
+          type: string
+        subject:
+          description: The short description of the change
+          type: string
+        subjectName:
+          description: The name of the subject
+          type: string
+        subjectPropertyName:
+          description: The property name of the subject
+          type: string
+      type: object
+    CreateAuditLogRequestDTO:
+      example:
+        createdByName: createdByName
+        newValue: newValue
+        subject: subject
+        message: message
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        subjectPropertyName: subjectPropertyName
+        groupedChanges:
+        - newValue: newValue
+          subjectPropertyName: subjectPropertyName
+          subject: subject
+          oldValue: oldValue
+          category: category
+          message: message
+          subjectName: subjectName
+        - newValue: newValue
+          subjectPropertyName: subjectPropertyName
+          subject: subject
+          oldValue: oldValue
+          category: category
+          message: message
+          subjectName: subjectName
+        oldValue: oldValue
+        category: category
+        serviceAffected: serviceAffected
+        createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        serviceCreated: serviceCreated
+        subjectName: subjectName
+      properties:
+        category:
+          description: The category of the change
+          type: string
+        createdAt:
+          description: The creation timestamp
+          format: date-time
+          type: string
+        createdById:
+          description: The user's ID who created
+          format: uuid
+          type: string
+        createdByName:
+          description: The user's name who created
+          type: string
+        groupedChanges:
+          description: The grouped changes if there are many related ones
+          items:
+            $ref: '#/components/schemas/CreateAuditLogChangeDTO'
+          type: array
+        message:
+          description: The message
+          type: string
+        newValue:
+          description: The new value
+          type: string
+        oldValue:
+          description: The old value
+          type: string
+        serviceAffected:
+          description: The service which the change affects
+          type: string
+        serviceCreated:
+          description: The service which created
+          type: string
+        subject:
+          description: The subject of the change
+          type: string
+        subjectName:
+          description: The name of the subject
+          type: string
+        subjectPropertyName:
+          description: The property name of the subject
+          type: string
+      required:
+      - category
+      - serviceCreated
+      - subject
+      type: object
+    CreateConsoleLogRequestDTO:
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        createdByName: createdByName
+        level: "{}"
+        service: service
+        message: message
+        createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+      properties:
+        createdAt:
+          description: The log timestamp
+          format: date-time
+          type: string
+        createdById:
+          description: The user's ID who created
+          format: uuid
+          type: string
+        createdByName:
+          description: The user's name who created
+          type: string
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LogLevel'
+          description: "The log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3,\
+            \ Fatal=4, Panic=5)"
+          type: object
+        message:
+          description: The log message
+          type: string
+        service:
+          description: The service which sent the log
+          type: string
+      required:
+      - level
+      - message
+      - service
+      type: object
+    CreateNotificationRequestDTO:
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        createdByName: createdByName
+        eventCategory: "{}"
+        service: service
+        message: message
+        targets:
+          key:
+          - targets
+          - targets
+        createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+      properties:
+        createdAt:
+          description: The log timestamp
+          format: date-time
+          type: string
+        createdById:
+          description: The user's ID who created
+          format: uuid
+          type: string
+        createdByName:
+          description: The user's name who created
+          type: string
+        eventCategory:
+          allOf:
+          - $ref: '#/components/schemas/NotificationEventCategory'
+          description: The notification event category
+          type: object
+        message:
+          description: The log message
+          type: string
+        service:
+          description: The service which sent the log
+          type: string
+        targets:
+          additionalProperties:
+            items:
+              type: string
+            type: array
+          description: The targets who will receive the notification
+          type: object
+      required:
+      - message
+      - service
+      type: object
+    HealthCheck:
+      example:
+        apiVersion:
+        - apiVersion
+        - apiVersion
+        service: service
+        status: status
+      properties:
+        apiVersion:
+          items:
+            type: string
+          type: array
+        service:
+          type: string
+        status:
+          type: string
+      type: object
+    LogLevel:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - -1
+      type: integer
+      x-enum-varnames:
+      - Debug
+      - Info
+      - Warning
+      - Error
+      - Fatal
+      - Panic
+      - Trace
+    NotificationEventCategory:
+      enum:
+      - NOTIFICATION
+      type: string
+      x-enum-varnames:
+      - Notification
+    NotificationMessageDTO:
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        createdByName: createdByName
+        service: service
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        message: message
+        createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        status: "{}"
+      properties:
+        createdAt:
+          description: The notification timestamp
+          format: date-time
+          type: string
+        createdById:
+          description: The user's ID who created
+          format: uuid
+          type: string
+        createdByName:
+          description: The user's name who created
+          type: string
+        id:
+          description: The ID
+          format: uuid
+          type: string
+        message:
+          description: The notification message
+          type: string
+        service:
+          description: The service which sent the notification
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/NotificationStatus'
+          description: The status of the message
+          type: object
+      type: object
+    NotificationMessageListPageResponse:
+      example:
+        totalPages: 2
+        pageSize: 50
+        currentPage: 1
+        totalCount: 69
+        items:
+        - createdAt: 2000-01-23T04:56:07.000+00:00
+          createdByName: createdByName
+          service: service
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          message: message
+          createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          status: "{}"
+        - createdAt: 2000-01-23T04:56:07.000+00:00
+          createdByName: createdByName
+          service: service
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          message: message
+          createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          status: "{}"
+      properties:
+        currentPage:
+          description: The actual page number
+          example: 1
+          type: integer
+        items:
+          description: The items
+          items:
+            $ref: '#/components/schemas/NotificationMessageDTO'
+          type: array
+        pageSize:
+          description: The number of items per page
+          example: 50
+          type: integer
+        totalCount:
+          description: The total count of items
+          example: 69
+          type: integer
+        totalPages:
+          description: The total pages
+          example: 2
+          type: integer
+      type: object
+    NotificationStatus:
+      enum:
+      - ERROR
+      - NEW
+      - SEEN
+      - SENT
+      type: string
+      x-enum-varnames:
+      - NotificationError
+      - NotificationNew
+      - NotificationSeen
+      - NotificationSent
+    SortDirection:
+      enum:
+      - asc
+      - desc
+      - ""
+      type: string
+      x-enum-varnames:
+      - SortAsc
+      - SortDesc
+      - SortNone
+    UpdateNotificationMessageRequestDTO:
+      example:
+        status: SEEN
+      properties:
+        status:
+          description: The status of the message (only the "SEEN" status is supported)
+          enum:
+          - SEEN
+          type: string
+      type: object
+  securitySchemes:
+    BearerAuth:
+      in: header
+      name: Authorization
+      type: apiKey
+x-original-swagger-version: "2.0"

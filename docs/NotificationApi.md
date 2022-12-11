@@ -1,6 +1,6 @@
 # \NotificationApi
 
-All URIs are relative to *https://localhost/api*
+All URIs are relative to */api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
@@ -10,18 +10,52 @@ Method | HTTP request | Description
 [**UpdateNotificationMessageV1**](NotificationApi.md#UpdateNotificationMessageV1) | **Patch** /v1/notification-messages/{id} | Update notification message
 
 
-# **CreateNotificationV1**
-> CreateNotificationV1(ctx, model)
+
+## CreateNotificationV1
+
+> CreateNotificationV1(ctx).Model(model).Execute()
+
 Create notification
 
-Creates a new notification
 
-### Required Parameters
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    model := *openapiclient.NewCreateNotificationRequestDTO("Message_example", "Service_example") // CreateNotificationRequestDTO | The notification DTO
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.NotificationApi.CreateNotificationV1(context.Background()).Model(model).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `NotificationApi.CreateNotificationV1``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiCreateNotificationV1Request struct via the builder pattern
+
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **model** | [**CreateNotificationRequestDto**](CreateNotificationRequestDto.md)| The notification DTO | 
+ **model** | [**CreateNotificationRequestDTO**](CreateNotificationRequestDTO.md) | The notification DTO | 
 
 ### Return type
 
@@ -33,35 +67,67 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
- - **Accept**: Not defined
+- **Content-Type**: application/json
+- **Accept**: Not defined
 
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints)
+[[Back to Model list]](README.md#documentation-for-models)
+[[Back to README]](README.md)
 
-# **GetNotificationMessagesV1**
-> NotificationMessageListPageResponse GetNotificationMessagesV1(ctx, page, pageSize, optional)
+
+## GetNotificationMessagesV1
+
+> NotificationMessageListPageResponse GetNotificationMessagesV1(ctx).Page(page).PageSize(pageSize).Filter(filter).Sort(sort).Execute()
+
 Get notification messages
 
-Gets all notification message
 
-### Required Parameters
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    page := int32(56) // int32 | The desired page number (default to 0)
+    pageSize := int32(56) // int32 | The desired number of items per page (default to 25)
+    filter := "filter_example" // string | The search term (optional)
+    sort := "sort_example" // string | The sorting parameter (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.NotificationApi.GetNotificationMessagesV1(context.Background()).Page(page).PageSize(pageSize).Filter(filter).Sort(sort).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `NotificationApi.GetNotificationMessagesV1``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetNotificationMessagesV1`: NotificationMessageListPageResponse
+    fmt.Fprintf(os.Stdout, "Response from `NotificationApi.GetNotificationMessagesV1`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetNotificationMessagesV1Request struct via the builder pattern
+
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **page** | **int32**| The desired page number | [default to 0]
-  **pageSize** | **int32**| The desired number of items per page | [default to 25]
- **optional** | ***NotificationApiGetNotificationMessagesV1Opts** | optional parameters | nil if no parameters
-
-### Optional Parameters
-Optional parameters are passed through a pointer to a NotificationApiGetNotificationMessagesV1Opts struct
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
-
- **filter** | **optional.String**| The search term | 
- **sort** | **optional.String**| The sorting parameter | 
+ **page** | **int32** | The desired page number | [default to 0]
+ **pageSize** | **int32** | The desired number of items per page | [default to 25]
+ **filter** | **string** | The search term | 
+ **sort** | **string** | The sorting parameter | 
 
 ### Return type
 
@@ -73,19 +139,56 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json
 
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints)
+[[Back to Model list]](README.md#documentation-for-models)
+[[Back to README]](README.md)
 
-# **PeekNotificationMessagesV1**
-> NotificationMessageListPageResponse PeekNotificationMessagesV1(ctx, )
+
+## PeekNotificationMessagesV1
+
+> NotificationMessageListPageResponse PeekNotificationMessagesV1(ctx).Execute()
+
 Peek notification messages
 
-Gets portion of the notification messages
 
-### Required Parameters
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.NotificationApi.PeekNotificationMessagesV1(context.Background()).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `NotificationApi.PeekNotificationMessagesV1``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `PeekNotificationMessagesV1`: NotificationMessageListPageResponse
+    fmt.Fprintf(os.Stdout, "Response from `NotificationApi.PeekNotificationMessagesV1`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
 This endpoint does not need any parameter.
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiPeekNotificationMessagesV1Request struct via the builder pattern
+
 
 ### Return type
 
@@ -97,24 +200,65 @@ This endpoint does not need any parameter.
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json
 
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints)
+[[Back to Model list]](README.md#documentation-for-models)
+[[Back to README]](README.md)
 
-# **UpdateNotificationMessageV1**
-> UpdateNotificationMessageV1(ctx, id, model)
+
+## UpdateNotificationMessageV1
+
+> UpdateNotificationMessageV1(ctx, id).Model(model).Execute()
+
 Update notification message
 
-Updates a notification message by the optionally provided properties
 
-### Required Parameters
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    id := "38400000-8cf0-11bd-b23e-10b96e4ef00d" // uuid.UUID | Message ID
+    model := *openapiclient.NewUpdateNotificationMessageRequestDTO() // UpdateNotificationMessageRequestDTO | The updated notification DTO
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.NotificationApi.UpdateNotificationMessageV1(context.Background(), id).Model(model).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `NotificationApi.UpdateNotificationMessageV1``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+}
+```
+
+### Path Parameters
+
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **id** | [**uuid.UUID**](.md)| Message ID | 
-  **model** | [**UpdateNotificationMessageRequestDto**](UpdateNotificationMessageRequestDto.md)| The updated notification DTO | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**id** | **uuid.UUID** | Message ID | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiUpdateNotificationMessageV1Request struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+ **model** | [**UpdateNotificationMessageRequestDTO**](UpdateNotificationMessageRequestDTO.md) | The updated notification DTO | 
 
 ### Return type
 
@@ -126,8 +270,10 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
- - **Accept**: Not defined
+- **Content-Type**: application/json
+- **Accept**: Not defined
 
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints)
+[[Back to Model list]](README.md#documentation-for-models)
+[[Back to README]](README.md)
 

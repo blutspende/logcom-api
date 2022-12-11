@@ -13,15 +13,12 @@ package logcomapi
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 )
 
-// AuditLogChangeDTO struct for AuditLogChangeDTO
-type AuditLogChangeDTO struct {
+// CreateAuditLogChangeDTO struct for CreateAuditLogChangeDTO
+type CreateAuditLogChangeDTO struct {
 	// The category of the change
 	Category *string `json:"category,omitempty"`
-	// The ID
-	Id *uuid.UUID `json:"id,omitempty"`
 	// The message
 	Message *string `json:"message,omitempty"`
 	// The new value
@@ -36,25 +33,25 @@ type AuditLogChangeDTO struct {
 	SubjectPropertyName *string `json:"subjectPropertyName,omitempty"`
 }
 
-// NewAuditLogChangeDTO instantiates a new AuditLogChangeDTO object
+// NewCreateAuditLogChangeDTO instantiates a new CreateAuditLogChangeDTO object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAuditLogChangeDTO() *AuditLogChangeDTO {
-	this := AuditLogChangeDTO{}
+func NewCreateAuditLogChangeDTO() *CreateAuditLogChangeDTO {
+	this := CreateAuditLogChangeDTO{}
 	return &this
 }
 
-// NewAuditLogChangeDTOWithDefaults instantiates a new AuditLogChangeDTO object
+// NewCreateAuditLogChangeDTOWithDefaults instantiates a new CreateAuditLogChangeDTO object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewAuditLogChangeDTOWithDefaults() *AuditLogChangeDTO {
-	this := AuditLogChangeDTO{}
+func NewCreateAuditLogChangeDTOWithDefaults() *CreateAuditLogChangeDTO {
+	this := CreateAuditLogChangeDTO{}
 	return &this
 }
 
 // GetCategory returns the Category field value if set, zero value otherwise.
-func (o *AuditLogChangeDTO) GetCategory() string {
+func (o *CreateAuditLogChangeDTO) GetCategory() string {
 	if o == nil || isNil(o.Category) {
 		var ret string
 		return ret
@@ -64,7 +61,7 @@ func (o *AuditLogChangeDTO) GetCategory() string {
 
 // GetCategoryOk returns a tuple with the Category field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *AuditLogChangeDTO) GetCategoryOk() (*string, bool) {
+func (o *CreateAuditLogChangeDTO) GetCategoryOk() (*string, bool) {
 	if o == nil || isNil(o.Category) {
     return nil, false
 	}
@@ -72,7 +69,7 @@ func (o *AuditLogChangeDTO) GetCategoryOk() (*string, bool) {
 }
 
 // HasCategory returns a boolean if a field has been set.
-func (o *AuditLogChangeDTO) HasCategory() bool {
+func (o *CreateAuditLogChangeDTO) HasCategory() bool {
 	if o != nil && !isNil(o.Category) {
 		return true
 	}
@@ -81,44 +78,12 @@ func (o *AuditLogChangeDTO) HasCategory() bool {
 }
 
 // SetCategory gets a reference to the given string and assigns it to the Category field.
-func (o *AuditLogChangeDTO) SetCategory(v string) {
+func (o *CreateAuditLogChangeDTO) SetCategory(v string) {
 	o.Category = &v
 }
 
-// GetId returns the Id field value if set, zero value otherwise.
-func (o *AuditLogChangeDTO) GetId() uuid.UUID {
-	if o == nil || isNil(o.Id) {
-		var ret uuid.UUID
-		return ret
-	}
-	return *o.Id
-}
-
-// GetIdOk returns a tuple with the Id field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *AuditLogChangeDTO) GetIdOk() (*uuid.UUID, bool) {
-	if o == nil || isNil(o.Id) {
-    return nil, false
-	}
-	return o.Id, true
-}
-
-// HasId returns a boolean if a field has been set.
-func (o *AuditLogChangeDTO) HasId() bool {
-	if o != nil && !isNil(o.Id) {
-		return true
-	}
-
-	return false
-}
-
-// SetId gets a reference to the given uuid.UUID and assigns it to the Id field.
-func (o *AuditLogChangeDTO) SetId(v uuid.UUID) {
-	o.Id = &v
-}
-
 // GetMessage returns the Message field value if set, zero value otherwise.
-func (o *AuditLogChangeDTO) GetMessage() string {
+func (o *CreateAuditLogChangeDTO) GetMessage() string {
 	if o == nil || isNil(o.Message) {
 		var ret string
 		return ret
@@ -128,7 +93,7 @@ func (o *AuditLogChangeDTO) GetMessage() string {
 
 // GetMessageOk returns a tuple with the Message field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *AuditLogChangeDTO) GetMessageOk() (*string, bool) {
+func (o *CreateAuditLogChangeDTO) GetMessageOk() (*string, bool) {
 	if o == nil || isNil(o.Message) {
     return nil, false
 	}
@@ -136,7 +101,7 @@ func (o *AuditLogChangeDTO) GetMessageOk() (*string, bool) {
 }
 
 // HasMessage returns a boolean if a field has been set.
-func (o *AuditLogChangeDTO) HasMessage() bool {
+func (o *CreateAuditLogChangeDTO) HasMessage() bool {
 	if o != nil && !isNil(o.Message) {
 		return true
 	}
@@ -145,12 +110,12 @@ func (o *AuditLogChangeDTO) HasMessage() bool {
 }
 
 // SetMessage gets a reference to the given string and assigns it to the Message field.
-func (o *AuditLogChangeDTO) SetMessage(v string) {
+func (o *CreateAuditLogChangeDTO) SetMessage(v string) {
 	o.Message = &v
 }
 
 // GetNewValue returns the NewValue field value if set, zero value otherwise.
-func (o *AuditLogChangeDTO) GetNewValue() string {
+func (o *CreateAuditLogChangeDTO) GetNewValue() string {
 	if o == nil || isNil(o.NewValue) {
 		var ret string
 		return ret
@@ -160,7 +125,7 @@ func (o *AuditLogChangeDTO) GetNewValue() string {
 
 // GetNewValueOk returns a tuple with the NewValue field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *AuditLogChangeDTO) GetNewValueOk() (*string, bool) {
+func (o *CreateAuditLogChangeDTO) GetNewValueOk() (*string, bool) {
 	if o == nil || isNil(o.NewValue) {
     return nil, false
 	}
@@ -168,7 +133,7 @@ func (o *AuditLogChangeDTO) GetNewValueOk() (*string, bool) {
 }
 
 // HasNewValue returns a boolean if a field has been set.
-func (o *AuditLogChangeDTO) HasNewValue() bool {
+func (o *CreateAuditLogChangeDTO) HasNewValue() bool {
 	if o != nil && !isNil(o.NewValue) {
 		return true
 	}
@@ -177,12 +142,12 @@ func (o *AuditLogChangeDTO) HasNewValue() bool {
 }
 
 // SetNewValue gets a reference to the given string and assigns it to the NewValue field.
-func (o *AuditLogChangeDTO) SetNewValue(v string) {
+func (o *CreateAuditLogChangeDTO) SetNewValue(v string) {
 	o.NewValue = &v
 }
 
 // GetOldValue returns the OldValue field value if set, zero value otherwise.
-func (o *AuditLogChangeDTO) GetOldValue() string {
+func (o *CreateAuditLogChangeDTO) GetOldValue() string {
 	if o == nil || isNil(o.OldValue) {
 		var ret string
 		return ret
@@ -192,7 +157,7 @@ func (o *AuditLogChangeDTO) GetOldValue() string {
 
 // GetOldValueOk returns a tuple with the OldValue field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *AuditLogChangeDTO) GetOldValueOk() (*string, bool) {
+func (o *CreateAuditLogChangeDTO) GetOldValueOk() (*string, bool) {
 	if o == nil || isNil(o.OldValue) {
     return nil, false
 	}
@@ -200,7 +165,7 @@ func (o *AuditLogChangeDTO) GetOldValueOk() (*string, bool) {
 }
 
 // HasOldValue returns a boolean if a field has been set.
-func (o *AuditLogChangeDTO) HasOldValue() bool {
+func (o *CreateAuditLogChangeDTO) HasOldValue() bool {
 	if o != nil && !isNil(o.OldValue) {
 		return true
 	}
@@ -209,12 +174,12 @@ func (o *AuditLogChangeDTO) HasOldValue() bool {
 }
 
 // SetOldValue gets a reference to the given string and assigns it to the OldValue field.
-func (o *AuditLogChangeDTO) SetOldValue(v string) {
+func (o *CreateAuditLogChangeDTO) SetOldValue(v string) {
 	o.OldValue = &v
 }
 
 // GetSubject returns the Subject field value if set, zero value otherwise.
-func (o *AuditLogChangeDTO) GetSubject() string {
+func (o *CreateAuditLogChangeDTO) GetSubject() string {
 	if o == nil || isNil(o.Subject) {
 		var ret string
 		return ret
@@ -224,7 +189,7 @@ func (o *AuditLogChangeDTO) GetSubject() string {
 
 // GetSubjectOk returns a tuple with the Subject field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *AuditLogChangeDTO) GetSubjectOk() (*string, bool) {
+func (o *CreateAuditLogChangeDTO) GetSubjectOk() (*string, bool) {
 	if o == nil || isNil(o.Subject) {
     return nil, false
 	}
@@ -232,7 +197,7 @@ func (o *AuditLogChangeDTO) GetSubjectOk() (*string, bool) {
 }
 
 // HasSubject returns a boolean if a field has been set.
-func (o *AuditLogChangeDTO) HasSubject() bool {
+func (o *CreateAuditLogChangeDTO) HasSubject() bool {
 	if o != nil && !isNil(o.Subject) {
 		return true
 	}
@@ -241,12 +206,12 @@ func (o *AuditLogChangeDTO) HasSubject() bool {
 }
 
 // SetSubject gets a reference to the given string and assigns it to the Subject field.
-func (o *AuditLogChangeDTO) SetSubject(v string) {
+func (o *CreateAuditLogChangeDTO) SetSubject(v string) {
 	o.Subject = &v
 }
 
 // GetSubjectName returns the SubjectName field value if set, zero value otherwise.
-func (o *AuditLogChangeDTO) GetSubjectName() string {
+func (o *CreateAuditLogChangeDTO) GetSubjectName() string {
 	if o == nil || isNil(o.SubjectName) {
 		var ret string
 		return ret
@@ -256,7 +221,7 @@ func (o *AuditLogChangeDTO) GetSubjectName() string {
 
 // GetSubjectNameOk returns a tuple with the SubjectName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *AuditLogChangeDTO) GetSubjectNameOk() (*string, bool) {
+func (o *CreateAuditLogChangeDTO) GetSubjectNameOk() (*string, bool) {
 	if o == nil || isNil(o.SubjectName) {
     return nil, false
 	}
@@ -264,7 +229,7 @@ func (o *AuditLogChangeDTO) GetSubjectNameOk() (*string, bool) {
 }
 
 // HasSubjectName returns a boolean if a field has been set.
-func (o *AuditLogChangeDTO) HasSubjectName() bool {
+func (o *CreateAuditLogChangeDTO) HasSubjectName() bool {
 	if o != nil && !isNil(o.SubjectName) {
 		return true
 	}
@@ -273,12 +238,12 @@ func (o *AuditLogChangeDTO) HasSubjectName() bool {
 }
 
 // SetSubjectName gets a reference to the given string and assigns it to the SubjectName field.
-func (o *AuditLogChangeDTO) SetSubjectName(v string) {
+func (o *CreateAuditLogChangeDTO) SetSubjectName(v string) {
 	o.SubjectName = &v
 }
 
 // GetSubjectPropertyName returns the SubjectPropertyName field value if set, zero value otherwise.
-func (o *AuditLogChangeDTO) GetSubjectPropertyName() string {
+func (o *CreateAuditLogChangeDTO) GetSubjectPropertyName() string {
 	if o == nil || isNil(o.SubjectPropertyName) {
 		var ret string
 		return ret
@@ -288,7 +253,7 @@ func (o *AuditLogChangeDTO) GetSubjectPropertyName() string {
 
 // GetSubjectPropertyNameOk returns a tuple with the SubjectPropertyName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *AuditLogChangeDTO) GetSubjectPropertyNameOk() (*string, bool) {
+func (o *CreateAuditLogChangeDTO) GetSubjectPropertyNameOk() (*string, bool) {
 	if o == nil || isNil(o.SubjectPropertyName) {
     return nil, false
 	}
@@ -296,7 +261,7 @@ func (o *AuditLogChangeDTO) GetSubjectPropertyNameOk() (*string, bool) {
 }
 
 // HasSubjectPropertyName returns a boolean if a field has been set.
-func (o *AuditLogChangeDTO) HasSubjectPropertyName() bool {
+func (o *CreateAuditLogChangeDTO) HasSubjectPropertyName() bool {
 	if o != nil && !isNil(o.SubjectPropertyName) {
 		return true
 	}
@@ -305,17 +270,14 @@ func (o *AuditLogChangeDTO) HasSubjectPropertyName() bool {
 }
 
 // SetSubjectPropertyName gets a reference to the given string and assigns it to the SubjectPropertyName field.
-func (o *AuditLogChangeDTO) SetSubjectPropertyName(v string) {
+func (o *CreateAuditLogChangeDTO) SetSubjectPropertyName(v string) {
 	o.SubjectPropertyName = &v
 }
 
-func (o AuditLogChangeDTO) MarshalJSON() ([]byte, error) {
+func (o CreateAuditLogChangeDTO) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if !isNil(o.Category) {
 		toSerialize["category"] = o.Category
-	}
-	if !isNil(o.Id) {
-		toSerialize["id"] = o.Id
 	}
 	if !isNil(o.Message) {
 		toSerialize["message"] = o.Message
@@ -338,38 +300,38 @@ func (o AuditLogChangeDTO) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-type NullableAuditLogChangeDTO struct {
-	value *AuditLogChangeDTO
+type NullableCreateAuditLogChangeDTO struct {
+	value *CreateAuditLogChangeDTO
 	isSet bool
 }
 
-func (v NullableAuditLogChangeDTO) Get() *AuditLogChangeDTO {
+func (v NullableCreateAuditLogChangeDTO) Get() *CreateAuditLogChangeDTO {
 	return v.value
 }
 
-func (v *NullableAuditLogChangeDTO) Set(val *AuditLogChangeDTO) {
+func (v *NullableCreateAuditLogChangeDTO) Set(val *CreateAuditLogChangeDTO) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableAuditLogChangeDTO) IsSet() bool {
+func (v NullableCreateAuditLogChangeDTO) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableAuditLogChangeDTO) Unset() {
+func (v *NullableCreateAuditLogChangeDTO) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableAuditLogChangeDTO(val *AuditLogChangeDTO) *NullableAuditLogChangeDTO {
-	return &NullableAuditLogChangeDTO{value: val, isSet: true}
+func NewNullableCreateAuditLogChangeDTO(val *CreateAuditLogChangeDTO) *NullableCreateAuditLogChangeDTO {
+	return &NullableCreateAuditLogChangeDTO{value: val, isSet: true}
 }
 
-func (v NullableAuditLogChangeDTO) MarshalJSON() ([]byte, error) {
+func (v NullableCreateAuditLogChangeDTO) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableAuditLogChangeDTO) UnmarshalJSON(src []byte) error {
+func (v *NullableCreateAuditLogChangeDTO) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
