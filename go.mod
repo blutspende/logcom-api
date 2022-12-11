@@ -3,7 +3,6 @@ module github.com/DRK-Blutspende-BaWueHe/logcom-api
 go 1.18
 
 require (
-	github.com/antihax/optional v1.0.0
 	github.com/google/uuid v1.3.0
 	golang.org/x/oauth2 v0.3.0
 )

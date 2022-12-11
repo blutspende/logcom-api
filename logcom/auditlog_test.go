@@ -5,12 +5,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	logcomapi "github.com/DRK-Blutspende-BaWueHe/logcom-api"
+	"github.com/google/uuid"
 )
 
 func TestSendAndNotifyAndLog(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		ctx := context.Background()
 		ctx = context.WithValue(ctx, "Authorization", "BearerToken")
+		ctx = context.WithValue(ctx, "RequestID", uuid.NewString())
 
 		svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(204)
@@ -25,10 +29,12 @@ func TestSendAndNotifyAndLog(t *testing.T) {
 		err := Audit().
 			Create("SUBJECT", "NAME", nil).
 			WithContext(ctx).
+			//WithTransactionID(uuid.New()).
+			//WithBearerAuthorization("BearerToken").
 			AndNotify().
 			Roles("test_role").
 			Message("Test notification").
-			AndLog(DebugLevel, "Debug log").
+			AndLog(logcomapi.Debug, "Debug log").
 			Send()
 		if err != nil {
 			t.Errorf("expected no error")

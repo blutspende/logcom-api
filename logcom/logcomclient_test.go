@@ -2,11 +2,12 @@ package logcom
 
 import (
 	"context"
-	logcomapi "github.com/DRK-Blutspende-BaWueHe/logcom-api"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	logcomapi "github.com/DRK-Blutspende-BaWueHe/logcom-api"
 )
 
 func TestSendConsoleLogWithModel(t *testing.T) {
@@ -24,11 +25,11 @@ func TestSendConsoleLogWithModel(t *testing.T) {
 			LogComURL:   svr.URL,
 		}
 		Init(config)
-		dto := logcomapi.CreateConsoleLogRequestDto{
-			Level:   int32(DebugLevel),
+		dto := logcomapi.CreateConsoleLogRequestDTO{
+			Level:   logcomapi.Debug,
 			Message: "Test send console log with model",
 		}
-		err := sendConsoleLogWithModel(ctx, dto, nil)
+		err := sendConsoleLogWithModel(ctx, dto)
 		if err != nil {
 			t.Errorf("expected no error")
 		}
@@ -46,14 +47,14 @@ func TestSendConsoleLogWithModel(t *testing.T) {
 		})
 
 		ctx := context.WithValue(context.Background(), "Authorization", "BearerToken")
-		dto := logcomapi.CreateConsoleLogRequestDto{
-			Level:   int32(DebugLevel),
+		dto := logcomapi.CreateConsoleLogRequestDTO{
+			Level:   logcomapi.Debug,
 			Message: "Test send console log with model",
 		}
 
 		expectedResponse := strconv.Itoa(http.StatusBadRequest) + http.StatusText(http.StatusBadRequest)
 
-		err := sendConsoleLogWithModel(ctx, dto, nil)
+		err := sendConsoleLogWithModel(ctx, dto)
 		if err != nil && err.Error() != expectedResponse {
 			return
 		}

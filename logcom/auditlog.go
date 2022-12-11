@@ -3,7 +3,6 @@ package logcom
 import (
 	"context"
 	"errors"
-	"net/http"
 	"reflect"
 	"strings"
 	"time"
@@ -29,7 +28,7 @@ var batchedOperationList = []int{
 type AuditLogAction interface {
 	IgnoreChangeOf(propertyNames ...string) AuditLogAction
 	AndNotify() NotificationOperation[AuditLogAction]
-	AndLog(logLevel Level, message string) AuditLogAction
+	AndLog(logLevel logcomapi.LogLevel, message string) AuditLogAction
 	OnComplete(onCompleteCallback func(error)) AuditLogAction
 	Send() error
 }
@@ -54,7 +53,7 @@ type AuditLogOperation interface {
 type BatchedAuditLogOperation interface {
 	AuditLogConfiguration
 	CreateItem(subjectName string, newValue interface{}) BatchedAuditLogOperation
-	ModifyItem(subjectName string, oldValue, newValue string) BatchedAuditLogOperation
+	ModifyItem(subjectName string, oldValue, newValue interface{}) BatchedAuditLogOperation
 	ModifyItemWithModelChanges(subjectName string, changes []ModelChange) BatchedAuditLogOperation
 	DeleteItem(subjectName string, oldValue interface{}) BatchedAuditLogOperation
 }
@@ -62,7 +61,7 @@ type BatchedAuditLogOperation interface {
 type GroupedModificationAuditLogOperation interface {
 	AuditLogConfiguration
 	AddCreation(subject, subjectName string, newValue interface{}) GroupedModificationAuditLogOperation
-	AddModification(subject, subjectName string, oldValue, newValue string) GroupedModificationAuditLogOperation
+	AddModification(subject, subjectName string, oldValue, newValue interface{}) GroupedModificationAuditLogOperation
 	AddModificationWithModelChanges(subject, subjectName string, changes []ModelChange) GroupedModificationAuditLogOperation
 	AddDeletion(subject, subjectName string, oldValue interface{}) GroupedModificationAuditLogOperation
 }
@@ -78,8 +77,8 @@ type ModelChange struct {
 }
 
 type AuditLogCollector struct {
-	parentAuditLog logcomapi.CreateAuditLogRequestDto
-	auditLogs      map[string]map[string][]logcomapi.CreateAuditLogRequestDto
+	parentAuditLog logcomapi.CreateAuditLogRequestDTO
+	auditLogs      map[string]map[string][]logcomapi.CreateAuditLogRequestDTO
 }
 
 type auditLog[T any] struct {
@@ -90,7 +89,6 @@ type auditLog[T any] struct {
 	subject            string
 	subjectName        string
 	ignoredProperties  []string
-	httpHeaders        http.Header
 	consoleLog         *consoleLog
 	notification       *notification[T]
 	batchedAuditLogMap map[int]*AuditLogCollector
@@ -134,23 +132,24 @@ func AuditDeletion(subject, subjectName string, oldValue interface{}) AuditLogCo
 
 func NewAuditLogCollector(parentSubject, parentSubjectName string) *AuditLogCollector {
 	return &AuditLogCollector{
-		parentAuditLog: logcomapi.CreateAuditLogRequestDto{
+		parentAuditLog: logcomapi.CreateAuditLogRequestDTO{
 			Subject:     parentSubject,
-			SubjectName: parentSubjectName},
-		auditLogs: make(map[string]map[string][]logcomapi.CreateAuditLogRequestDto, 0),
+			SubjectName: &parentSubjectName,
+		},
+		auditLogs: make(map[string]map[string][]logcomapi.CreateAuditLogRequestDTO, 0),
 	}
 }
 
-func NewAuditLogCollectorWithParent(parentAuditLog logcomapi.CreateAuditLogRequestDto) *AuditLogCollector {
+func NewAuditLogCollectorWithParent(parentAuditLog logcomapi.CreateAuditLogRequestDTO) *AuditLogCollector {
 	return &AuditLogCollector{
 		parentAuditLog: parentAuditLog,
-		auditLogs:      make(map[string]map[string][]logcomapi.CreateAuditLogRequestDto, 0),
+		auditLogs:      make(map[string]map[string][]logcomapi.CreateAuditLogRequestDTO, 0),
 	}
 }
 
 func newAuditLogCollector() *AuditLogCollector {
 	return &AuditLogCollector{
-		auditLogs: make(map[string]map[string][]logcomapi.CreateAuditLogRequestDto, 0),
+		auditLogs: make(map[string]map[string][]logcomapi.CreateAuditLogRequestDTO, 0),
 	}
 }
 
@@ -224,13 +223,13 @@ func GetModelChanges(oldModel, newModel interface{}, ignoredProperties ...string
 	return changes, nil
 }
 
-func prepareAuditLogRequestDTO(dto *logcomapi.CreateAuditLogRequestDto) {
+func prepareAuditLogRequestDTO(dto *logcomapi.CreateAuditLogRequestDTO) {
 	if dto.ServiceCreated == "" {
 		dto.ServiceCreated = configuration.ServiceName
 	}
 
-	if dto.ServiceAffected == "" {
-		dto.ServiceAffected = configuration.ServiceName
+	if dto.ServiceAffected == nil {
+		dto.ServiceAffected = &configuration.ServiceName
 	}
 
 	if dto.CreatedAt != nil {
@@ -274,11 +273,11 @@ func (al *auditLog[T]) IgnoreChangeOf(propertyNames ...string) AuditLogAction {
 
 func (al *auditLog[T]) AndNotify() NotificationOperation[AuditLogAction] {
 	ensureNotification(&al.notification)
-	al.notification.eventCategory = "NOTIFICATION"
+	al.notification.eventCategory = logcomapi.Notification
 	return interface{}(al).(NotificationOperation[AuditLogAction])
 }
 
-func (al *auditLog[T]) AndLog(logLevel Level, message string) AuditLogAction {
+func (al *auditLog[T]) AndLog(logLevel logcomapi.LogLevel, message string) AuditLogAction {
 	ensureConsoleLog(&al.consoleLog)
 	al.consoleLog.logLevel = logLevel
 	al.consoleLog.message = message
@@ -301,11 +300,10 @@ func (al *auditLog[T]) UseService2ServiceAuthorization() AuditLogAction {
 }
 
 func (al *auditLog[T]) WithBearerAuthorization(bearerToken string) AuditLogAction {
-	ensureHTTPHeaders(&al.httpHeaders)
 	if !strings.HasPrefix(bearerToken, "Bearer ") {
 		bearerToken = "Bearer " + bearerToken
 	}
-	al.httpHeaders["Authorization"] = []string{bearerToken}
+	al.ctx = context.WithValue(al.ctx, "Authorization", bearerToken)
 	return al
 }
 
@@ -315,8 +313,7 @@ func (al *auditLog[T]) WithContext(ctx context.Context) AuditLogAction {
 }
 
 func (al *auditLog[T]) WithTransactionID(transactionID uuid.UUID) AuditLogConfiguration {
-	ensureHTTPHeaders(&al.httpHeaders)
-	al.httpHeaders["X-Request-ID"] = []string{transactionID.String()}
+	al.ctx = context.WithValue(al.ctx, "RequestID", transactionID.String())
 	return al
 }
 
@@ -331,7 +328,7 @@ func (al *auditLog[T]) Send() error {
 	var isBatch bool
 	for _, operation := range batchedOperationList {
 		if al.batchedAuditLogMap[operation] != nil && len(al.batchedAuditLogMap[operation].auditLogs) > 0 {
-			err = sendAuditLogGroup(al.ctx, al, al.batchedAuditLogMap[operation], al.httpHeaders)
+			err = sendAuditLogGroup(al.ctx, al, al.batchedAuditLogMap[operation])
 			if err != nil {
 				logError.Println("Failed to send batched audit logs")
 				al.onCompleteCallback(err)
@@ -344,11 +341,11 @@ func (al *auditLog[T]) Send() error {
 	if !isBatch {
 		switch al.operation {
 		case "CREATION":
-			err = sendAuditLogWithCreation(al.ctx, al.subject, al.subjectName, al.newValue, al.httpHeaders)
+			err = sendAuditLogWithCreation(al.ctx, al.subject, al.subjectName, al.newValue)
 		case "MODIFICATION":
-			err = sendAuditLogWithModification(al.ctx, al.subject, al.subjectName, al.oldValue, al.newValue, al.httpHeaders, al.ignoredProperties...)
+			err = sendAuditLogWithModification(al.ctx, al.subject, al.subjectName, al.oldValue, al.newValue, al.ignoredProperties...)
 		case "DELETION":
-			err = sendAuditLogWithDeletion(al.ctx, al.subject, al.subjectName, al.oldValue, al.httpHeaders)
+			err = sendAuditLogWithDeletion(al.ctx, al.subject, al.subjectName, al.oldValue)
 		default:
 			err = errors.New("invalid audit operation: " + al.operation)
 		}
@@ -361,14 +358,14 @@ func (al *auditLog[T]) Send() error {
 	}
 
 	if al.notification != nil {
-		if err = sendNotification(al.ctx, al.notification.eventCategory, al.notification.message, al.notification.targets, al.httpHeaders); err != nil {
+		if err = sendNotification(al.ctx, al.notification.eventCategory, al.notification.message, al.notification.targets); err != nil {
 			logError.Printf("Failed to send notification: %v\n", err)
 			// Todo: Maybe add it to a list for retry purpose
 		}
 	}
 
 	if al.consoleLog != nil {
-		if err = sendConsoleLog(al.ctx, al.consoleLog.logLevel, al.consoleLog.message, al.httpHeaders); err != nil {
+		if err = sendConsoleLog(al.ctx, al.consoleLog.logLevel, al.consoleLog.message); err != nil {
 			logError.Printf("Failed to send console log: %v\n", err)
 		}
 	}
@@ -409,7 +406,7 @@ func (al *auditLog[T]) CreateItem(subjectName string, newValue interface{}) Batc
 	return al
 }
 
-func (al *auditLog[T]) ModifyItem(subjectName string, oldValue, newValue string) BatchedAuditLogOperation {
+func (al *auditLog[T]) ModifyItem(subjectName string, oldValue, newValue interface{}) BatchedAuditLogOperation {
 	al.ensureBatchedAuditLogs(batchedModification)
 	al.batchedAuditLogMap[batchedModification].AddModification(al.subject, subjectName, oldValue, newValue)
 	return al
@@ -432,7 +429,7 @@ func (al *auditLog[T]) AddCreation(subject, subjectName string, newValue interfa
 	return al
 }
 
-func (al *auditLog[T]) AddModification(subject, subjectName string, oldValue, newValue string) GroupedModificationAuditLogOperation {
+func (al *auditLog[T]) AddModification(subject, subjectName string, oldValue, newValue interface{}) GroupedModificationAuditLogOperation {
 	al.batchedAuditLogMap[batchedModification].AddModification(subject, subjectName, oldValue, newValue)
 	return al
 }
@@ -481,32 +478,29 @@ func (al *auditLog[T]) ensureIgnoredProperties() {
 }
 
 func (c *AuditLogCollector) AddCreation(itemSubject, itemSubjectName string, newValue interface{}) {
-	if newValue == nil {
-		newValue = ""
-	}
-	c.Add(logcomapi.CreateAuditLogRequestDto{
+	c.Add(logcomapi.CreateAuditLogRequestDTO{
 		Category:    "CREATION",
 		NewValue:    stringify(newValue),
 		Subject:     itemSubject,
-		SubjectName: itemSubjectName,
+		SubjectName: &itemSubjectName,
 	})
 }
 
-func (c *AuditLogCollector) AddModification(itemSubject, itemSubjectName string, oldValue, newValue string) {
-	c.Add(logcomapi.CreateAuditLogRequestDto{
+func (c *AuditLogCollector) AddModification(itemSubject, itemSubjectName string, oldValue, newValue interface{}) {
+	c.Add(logcomapi.CreateAuditLogRequestDTO{
 		Category:    "MODIFICATION",
-		NewValue:    newValue,
-		OldValue:    oldValue,
+		NewValue:    stringify(newValue),
+		OldValue:    stringify(oldValue),
 		Subject:     itemSubject,
-		SubjectName: itemSubjectName,
+		SubjectName: &itemSubjectName,
 	})
 }
 
 func (c *AuditLogCollector) AddModificationWithModelChanges(itemSubject, itemSubjectName string, changes []ModelChange) {
-	dto := logcomapi.CreateAuditLogRequestDto{
+	dto := logcomapi.CreateAuditLogRequestDTO{
 		Category:    "MODIFICATION",
 		Subject:     itemSubject,
-		SubjectName: itemSubjectName,
+		SubjectName: &itemSubjectName,
 	}
 
 	transformModelChangesToDTO(&dto, changes)
@@ -518,28 +512,28 @@ func (c *AuditLogCollector) AddDeletion(itemSubject, itemSubjectName string, old
 	if oldValue == nil {
 		oldValue = ""
 	}
-	c.Add(logcomapi.CreateAuditLogRequestDto{
+	c.Add(logcomapi.CreateAuditLogRequestDTO{
 		Category:    "DELETION",
 		OldValue:    stringify(oldValue),
 		Subject:     itemSubject,
-		SubjectName: itemSubjectName,
+		SubjectName: &itemSubjectName,
 	})
 }
 
-func (c *AuditLogCollector) Add(model logcomapi.CreateAuditLogRequestDto) {
+func (c *AuditLogCollector) Add(model logcomapi.CreateAuditLogRequestDTO) {
 	if subjectNameMap, ok := c.auditLogs[model.Subject]; ok {
-		if auditLogList, ok := subjectNameMap[model.SubjectName]; ok {
-			c.auditLogs[model.Subject][model.SubjectName] = append(auditLogList, model)
+		if auditLogList, ok := subjectNameMap[*model.SubjectName]; ok {
+			c.auditLogs[model.Subject][*model.SubjectName] = append(auditLogList, model)
 		} else {
-			c.auditLogs[model.Subject][model.SubjectName] = []logcomapi.CreateAuditLogRequestDto{model}
+			c.auditLogs[model.Subject][*model.SubjectName] = []logcomapi.CreateAuditLogRequestDTO{model}
 		}
 	} else {
-		c.auditLogs[model.Subject] = map[string][]logcomapi.CreateAuditLogRequestDto{model.SubjectName: {model}}
+		c.auditLogs[model.Subject] = map[string][]logcomapi.CreateAuditLogRequestDTO{*model.SubjectName: {model}}
 	}
 }
 
-func (c *AuditLogCollector) get() logcomapi.CreateAuditLogRequestDto {
-	c.parentAuditLog.GroupedChanges = make([]logcomapi.NewAuditLogChangeDto, 0)
+func (c *AuditLogCollector) get() logcomapi.CreateAuditLogRequestDTO {
+	c.parentAuditLog.GroupedChanges = make([]logcomapi.CreateAuditLogChangeDTO, 0)
 	hasSameCategory := true
 	seenCategory := ""
 
@@ -551,13 +545,13 @@ func (c *AuditLogCollector) get() logcomapi.CreateAuditLogRequestDto {
 						c.parentAuditLog.GroupedChanges = append(c.parentAuditLog.GroupedChanges, nestedAuditLogChange)
 					}
 				} else {
-					c.parentAuditLog.GroupedChanges = append(c.parentAuditLog.GroupedChanges, logcomapi.NewAuditLogChangeDto{
-						Category:            auditLog.Category,
+					c.parentAuditLog.GroupedChanges = append(c.parentAuditLog.GroupedChanges, logcomapi.CreateAuditLogChangeDTO{
+						Category:            &auditLog.Category,
 						Message:             auditLog.Message,
 						NewValue:            auditLog.NewValue,
 						OldValue:            auditLog.OldValue,
-						Subject:             subjectAsKey,
-						SubjectName:         subjectNameAsKey,
+						Subject:             &subjectAsKey,
+						SubjectName:         &subjectNameAsKey,
 						SubjectPropertyName: auditLog.SubjectPropertyName,
 					})
 				}

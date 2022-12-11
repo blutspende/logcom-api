@@ -2,7 +2,6 @@ package logcom
 
 import (
 	"context"
-	"net/http"
 	"strings"
 	"time"
 
@@ -11,7 +10,7 @@ import (
 )
 
 type NotificationAction interface {
-	AndLog(logLevel Level, message string) NotificationAction
+	AndLog(logLevel logcomapi.LogLevel, message string) NotificationAction
 	OnComplete(onCompleteCallback func(error)) NotificationAction
 	Send() error
 }
@@ -36,8 +35,7 @@ type NotificationMessage[T any] interface {
 
 type notification[T any] struct {
 	ctx                context.Context
-	httpHeaders        http.Header
-	eventCategory      string
+	eventCategory      logcomapi.NotificationEventCategory
 	message            string
 	targets            map[string][]string
 	consoleLog         *consoleLog
@@ -46,19 +44,19 @@ type notification[T any] struct {
 
 func Notify() NotificationOperation[NotificationConfiguration] {
 	return &notification[NotificationConfiguration]{
-		eventCategory:      "NOTIFICATION",
+		eventCategory:      logcomapi.Notification,
 		ctx:                context.TODO(),
 		onCompleteCallback: func(error) {},
 	}
 }
 
-func prepareNotificationRequestDTO(dto *logcomapi.CreateNotificationRequestDto) {
+func prepareNotificationRequestDTO(dto *logcomapi.CreateNotificationRequestDTO) {
 	if dto.Service == "" {
 		dto.Service = configuration.ServiceName
 	}
 
-	if dto.EventCategory == "" {
-		dto.EventCategory = "NOTIFICATION"
+	if dto.EventCategory == nil {
+		dto.EventCategory = toPtr(logcomapi.Notification)
 	}
 
 	if dto.CreatedAt != nil {
@@ -70,7 +68,7 @@ func prepareNotificationRequestDTO(dto *logcomapi.CreateNotificationRequestDto) 
 	}
 }
 
-func (n *notification[T]) AndLog(logLevel Level, message string) NotificationAction {
+func (n *notification[T]) AndLog(logLevel logcomapi.LogLevel, message string) NotificationAction {
 	ensureConsoleLog(&n.consoleLog)
 	n.consoleLog.logLevel = logLevel
 	n.consoleLog.message = message
@@ -83,7 +81,7 @@ func (n *notification[T]) OnComplete(onCompleteCallback func(error)) Notificatio
 }
 
 func (n *notification[T]) Send() error {
-	err := sendNotification(n.ctx, n.eventCategory, n.message, n.targets, n.httpHeaders)
+	err := sendNotification(n.ctx, n.eventCategory, n.message, n.targets)
 	if err != nil {
 		logError.Println("Failed to send notification")
 		n.onCompleteCallback(err)
@@ -91,7 +89,7 @@ func (n *notification[T]) Send() error {
 	}
 
 	if n.consoleLog != nil {
-		if err = sendConsoleLog(n.ctx, n.consoleLog.logLevel, n.consoleLog.message, n.httpHeaders); err != nil {
+		if err = sendConsoleLog(n.ctx, n.consoleLog.logLevel, n.consoleLog.message); err != nil {
 			logError.Printf("Failed to send console log: %v\n", err)
 		}
 	}
@@ -117,11 +115,10 @@ func (n *notification[T]) UseService2ServiceAuthorization() NotificationAction {
 }
 
 func (n *notification[T]) WithBearerAuthorization(bearerToken string) NotificationAction {
-	ensureHTTPHeaders(&n.httpHeaders)
 	if !strings.HasPrefix(bearerToken, "Bearer ") {
 		bearerToken = "Bearer " + bearerToken
 	}
-	n.httpHeaders["Authorization"] = []string{bearerToken}
+	n.ctx = context.WithValue(n.ctx, "Authorization", bearerToken)
 	return n
 }
 
@@ -131,8 +128,7 @@ func (n *notification[T]) WithContext(ctx context.Context) NotificationAction {
 }
 
 func (n *notification[T]) WithTransactionID(transactionID uuid.UUID) NotificationConfiguration {
-	ensureHTTPHeaders(&n.httpHeaders)
-	n.httpHeaders["X-Request-ID"] = []string{transactionID.String()}
+	n.ctx = context.WithValue(n.ctx, "RequestID", transactionID.String())
 	return n
 }
 

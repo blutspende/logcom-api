@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	logcomapi "github.com/DRK-Blutspende-BaWueHe/logcom-api"
 )
 
 func TestSendAndLog(t *testing.T) {
@@ -26,7 +28,7 @@ func TestSendAndLog(t *testing.T) {
 			Roles("test_role").
 			Message("Test notification").
 			WithContext(ctx).
-			AndLog(DebugLevel, "Debug log").
+			AndLog(logcomapi.Debug, "Debug log").
 			Send()
 		if err != nil {
 			t.Errorf("expected no error")

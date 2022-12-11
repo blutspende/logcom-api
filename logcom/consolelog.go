@@ -3,32 +3,11 @@ package logcom
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/DRK-Blutspende-BaWueHe/logcom-api"
-)
-
-type Level int8
-
-const (
-	// DebugLevel defines debug log level.
-	DebugLevel Level = iota
-	// InfoLevel defines info log level.
-	InfoLevel
-	// WarnLevel defines warn log level.
-	WarnLevel
-	// ErrorLevel defines error log level.
-	ErrorLevel
-	// FatalLevel defines fatal log level.
-	FatalLevel
-	// PanicLevel defines panic log level.
-	PanicLevel
-
-	// TraceLevel defines trace log level.
-	TraceLevel Level = -1
+	"github.com/google/uuid"
 )
 
 type ConsoleLogAction interface {
@@ -44,28 +23,27 @@ type ConsoleLogConfiguration interface {
 }
 
 type ConsoleLogOperation interface {
-	Level(level Level) ConsoleLogOperation
+	Level(level logcomapi.LogLevel) ConsoleLogOperation
 	Message(message string) ConsoleLogConfiguration
 	MessageF(format string, params ...any) ConsoleLogConfiguration
 }
 
 type consoleLog struct {
 	ctx                context.Context
-	logLevel           Level
+	logLevel           logcomapi.LogLevel
 	message            string
-	httpHeaders        http.Header
 	onCompleteCallback func(error)
 }
 
 func Log() ConsoleLogOperation {
 	return &consoleLog{
 		ctx:                context.TODO(),
-		logLevel:           WarnLevel,
+		logLevel:           logcomapi.Warning,
 		onCompleteCallback: func(error) {},
 	}
 }
 
-func prepareConsoleLogRequestDTO(dto *logcomapi.CreateConsoleLogRequestDto) {
+func prepareConsoleLogRequestDTO(dto *logcomapi.CreateConsoleLogRequestDTO) {
 	if dto.Service == "" {
 		dto.Service = configuration.ServiceName
 	}
@@ -79,7 +57,7 @@ func prepareConsoleLogRequestDTO(dto *logcomapi.CreateConsoleLogRequestDto) {
 	}
 }
 
-func (cl *consoleLog) Level(level Level) ConsoleLogOperation {
+func (cl *consoleLog) Level(level logcomapi.LogLevel) ConsoleLogOperation {
 	cl.logLevel = level
 	return cl
 }
@@ -110,11 +88,10 @@ func (cl *consoleLog) UseService2ServiceAuthorization() ConsoleLogAction {
 }
 
 func (cl *consoleLog) WithBearerAuthorization(bearerToken string) ConsoleLogAction {
-	ensureHTTPHeaders(&cl.httpHeaders)
 	if !strings.HasPrefix(bearerToken, "Bearer ") {
 		bearerToken = "Bearer " + bearerToken
 	}
-	cl.httpHeaders["Authorization"] = []string{bearerToken}
+	cl.ctx = context.WithValue(cl.ctx, "Authorization", bearerToken)
 	return cl
 }
 
@@ -124,8 +101,7 @@ func (cl *consoleLog) WithContext(ctx context.Context) ConsoleLogAction {
 }
 
 func (cl *consoleLog) WithTransactionID(transactionID uuid.UUID) ConsoleLogConfiguration {
-	ensureHTTPHeaders(&cl.httpHeaders)
-	cl.httpHeaders["X-Request-ID"] = []string{transactionID.String()}
+	cl.ctx = context.WithValue(cl.ctx, "RequestID", transactionID.String())
 	return cl
 }
 
@@ -135,7 +111,7 @@ func (cl *consoleLog) OnComplete(onCompleteCallback func(error)) ConsoleLogActio
 }
 
 func (cl *consoleLog) Send() error {
-	err := sendConsoleLog(cl.ctx, cl.logLevel, cl.message, cl.httpHeaders)
+	err := sendConsoleLog(cl.ctx, cl.logLevel, cl.message)
 	if err != nil {
 		logError.Printf("Failed to send console log: %v\n", err)
 	}

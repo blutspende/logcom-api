@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	logcomapi "github.com/DRK-Blutspende-BaWueHe/logcom-api"
 )
 
 func TestSend(t *testing.T) {
@@ -23,7 +25,7 @@ func TestSend(t *testing.T) {
 		}
 		Init(config)
 		err := Log().
-			Level(DebugLevel).
+			Level(logcomapi.Debug).
 			Message("Debug message").
 			WithContext(ctx).
 			Send()
