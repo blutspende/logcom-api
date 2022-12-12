@@ -36,9 +36,12 @@ type ClientCredentialProvider interface {
 	GetClientCredential() (string, error)
 }
 
+type HeaderProviderFunc func(ctx context.Context) http.Header
+
 type Configuration struct {
 	ServiceName              string
 	LogComURL                string
+	HeaderProvider           HeaderProviderFunc
 	ClientCredentialProvider ClientCredentialProvider
 }
 
@@ -79,6 +82,9 @@ func init() {
 	config := Configuration{
 		ServiceName: "Unknown",
 		LogComURL:   logcomURL,
+		HeaderProvider: func(ctx context.Context) http.Header {
+			return http.Header{}
+		},
 	}
 
 	configuration = config
@@ -129,6 +135,10 @@ func Init(config Configuration) {
 
 		if config.ServiceName != "" {
 			configuration.ServiceName = config.ServiceName
+		}
+
+		if config.HeaderProvider != nil {
+			configuration.HeaderProvider = config.HeaderProvider
 		}
 
 		if config.ClientCredentialProvider != nil {
@@ -507,13 +517,19 @@ type headerMiddleware struct {
 func (t *headerMiddleware) RoundTrip(r *http.Request) (*http.Response, error) {
 	requestCopy := r.Clone(r.Context())
 
+	for headerKey, headerValue := range configuration.HeaderProvider(requestCopy.Context()) {
+		for _, header := range headerValue {
+			requestCopy.Header.Add(headerKey, header)
+		}
+	}
+
 	authToken := requestCopy.Context().Value("Authorization")
-	if authToken == nil {
+	if authToken == nil && requestCopy.Header.Get("Authorization") == "" {
 		return nil, errors.New("authorization header cannot be extracted from context")
 	}
 
 	requestID := requestCopy.Context().Value("RequestID")
-	if requestID == nil {
+	if requestID == nil && requestCopy.Header.Get("X-Request-ID") == "" {
 		requestID = uuid.NewString()
 	}
 
