@@ -533,8 +533,13 @@ func (t *headerMiddleware) RoundTrip(r *http.Request) (*http.Response, error) {
 		requestID = uuid.NewString()
 	}
 
-	requestCopy.Header.Set("Authorization", authToken.(string))
-	requestCopy.Header.Set("X-Request-ID", requestID.(string))
+	if authToken != nil {
+		requestCopy.Header.Set("Authorization", authToken.(string))
+	}
+
+	if requestID != nil {
+		requestCopy.Header.Set("X-Request-ID", requestID.(string))
+	}
 
 	if t.originalRoundTripper == nil {
 		return http.DefaultTransport.RoundTrip(requestCopy)
