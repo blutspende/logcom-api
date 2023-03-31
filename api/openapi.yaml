@@ -9,7 +9,7 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   title: LogCom API
-  version: 1.2.14
+  version: 1.2.15
 servers:
 - url: /api
 paths:
@@ -23,6 +23,23 @@ paths:
         name: filter
         schema:
           type: string
+      - description: The sorting direction
+        in: query
+        name: direction
+        schema:
+          enum:
+          - asc
+          - desc
+          - ""
+          type: string
+          x-enum-varnames:
+          - SortAsc
+          - SortDesc
+          - SortNone
+        x-enum-varnames:
+        - SortAsc
+        - SortDesc
+        - SortNone
       - description: The desired page number
         in: query
         name: page
@@ -78,6 +95,23 @@ paths:
         name: filter
         schema:
           type: string
+      - description: The sorting direction
+        in: query
+        name: direction
+        schema:
+          enum:
+          - asc
+          - desc
+          - ""
+          type: string
+          x-enum-varnames:
+          - SortAsc
+          - SortDesc
+          - SortNone
+        x-enum-varnames:
+        - SortAsc
+        - SortDesc
+        - SortNone
       - description: The desired page number
         in: query
         name: page
@@ -201,6 +235,23 @@ paths:
         name: filter
         schema:
           type: string
+      - description: The sorting direction
+        in: query
+        name: direction
+        schema:
+          enum:
+          - asc
+          - desc
+          - ""
+          type: string
+          x-enum-varnames:
+          - SortAsc
+          - SortDesc
+          - SortNone
+        x-enum-varnames:
+        - SortAsc
+        - SortDesc
+        - SortNone
       - description: The desired page number
         in: query
         name: page

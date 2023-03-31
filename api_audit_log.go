@@ -3,7 +3,7 @@ LogCom API
 
 LogCom Swagger documentation
 
-API version: 1.2.14
+API version: 1.2.15
 Contact: laborit@blutspende.de
 */
 
@@ -143,6 +143,7 @@ type ApiGetAuditLogsV1Request struct {
 	page *int32
 	pageSize *int32
 	filter *string
+	direction *string
 	sort *string
 }
 
@@ -161,6 +162,12 @@ func (r ApiGetAuditLogsV1Request) PageSize(pageSize int32) ApiGetAuditLogsV1Requ
 // The search term
 func (r ApiGetAuditLogsV1Request) Filter(filter string) ApiGetAuditLogsV1Request {
 	r.filter = &filter
+	return r
+}
+
+// The sorting direction
+func (r ApiGetAuditLogsV1Request) Direction(direction string) ApiGetAuditLogsV1Request {
+	r.direction = &direction
 	return r
 }
 
@@ -224,6 +231,9 @@ func (a *AuditLogApiService) GetAuditLogsV1Execute(r ApiGetAuditLogsV1Request) (
 
 	if r.filter != nil {
 		localVarQueryParams.Add("filter", parameterToString(*r.filter, ""))
+	}
+	if r.direction != nil {
+		localVarQueryParams.Add("direction", parameterToString(*r.direction, ""))
 	}
 	localVarQueryParams.Add("page", parameterToString(*r.page, ""))
 	localVarQueryParams.Add("pageSize", parameterToString(*r.pageSize, ""))

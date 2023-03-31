@@ -75,7 +75,7 @@ Name | Type | Description  | Notes
 
 ## GetConsoleLogsV1
 
-> ConsoleLogListPageResponse GetConsoleLogsV1(ctx).Page(page).PageSize(pageSize).Filter(filter).Sort(sort).Execute()
+> ConsoleLogListPageResponse GetConsoleLogsV1(ctx).Page(page).PageSize(pageSize).Filter(filter).Direction(direction).Sort(sort).Execute()
 
 Get console logs
 
@@ -97,11 +97,12 @@ func main() {
     page := int32(56) // int32 | The desired page number (default to 0)
     pageSize := int32(56) // int32 | The desired number of items per page (default to 25)
     filter := "filter_example" // string | The search term (optional)
+    direction := "direction_example" // string | The sorting direction (optional)
     sort := "sort_example" // string | The sorting parameter (optional)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ConsoleLogApi.GetConsoleLogsV1(context.Background()).Page(page).PageSize(pageSize).Filter(filter).Sort(sort).Execute()
+    resp, r, err := apiClient.ConsoleLogApi.GetConsoleLogsV1(context.Background()).Page(page).PageSize(pageSize).Filter(filter).Direction(direction).Sort(sort).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `ConsoleLogApi.GetConsoleLogsV1``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -125,6 +126,7 @@ Name | Type | Description  | Notes
  **page** | **int32** | The desired page number | [default to 0]
  **pageSize** | **int32** | The desired number of items per page | [default to 25]
  **filter** | **string** | The search term | 
+ **direction** | **string** | The sorting direction | 
  **sort** | **string** | The sorting parameter | 
 
 ### Return type

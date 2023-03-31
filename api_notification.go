@@ -3,7 +3,7 @@ LogCom API
 
 LogCom Swagger documentation
 
-API version: 1.2.14
+API version: 1.2.15
 Contact: laborit@blutspende.de
 */
 
@@ -145,6 +145,7 @@ type ApiGetNotificationMessagesV1Request struct {
 	page *int32
 	pageSize *int32
 	filter *string
+	direction *string
 	sort *string
 }
 
@@ -163,6 +164,12 @@ func (r ApiGetNotificationMessagesV1Request) PageSize(pageSize int32) ApiGetNoti
 // The search term
 func (r ApiGetNotificationMessagesV1Request) Filter(filter string) ApiGetNotificationMessagesV1Request {
 	r.filter = &filter
+	return r
+}
+
+// The sorting direction
+func (r ApiGetNotificationMessagesV1Request) Direction(direction string) ApiGetNotificationMessagesV1Request {
+	r.direction = &direction
 	return r
 }
 
@@ -226,6 +233,9 @@ func (a *NotificationApiService) GetNotificationMessagesV1Execute(r ApiGetNotifi
 
 	if r.filter != nil {
 		localVarQueryParams.Add("filter", parameterToString(*r.filter, ""))
+	}
+	if r.direction != nil {
+		localVarQueryParams.Add("direction", parameterToString(*r.direction, ""))
 	}
 	localVarQueryParams.Add("page", parameterToString(*r.page, ""))
 	localVarQueryParams.Add("pageSize", parameterToString(*r.pageSize, ""))
