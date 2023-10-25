@@ -423,7 +423,7 @@ func transformModelChangesToDTO(targetDTO *logcomapi.CreateAuditLogRequestDTO, c
 				OldValue:            stringify(change.OldValue),
 				Subject:             &targetDTO.Subject,
 				SubjectName:         targetDTO.SubjectName,
-				SubjectPropertyName: &change.PropertyName,
+				SubjectPropertyName: &changes[i].PropertyName,
 			}
 		}
 
