@@ -5,6 +5,7 @@ All URIs are relative to */api*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**CreateAuditLogV1Int**](AuditLogApi.md#CreateAuditLogV1Int) | **Post** /v1/int/audit-logs | Create audit log
+[**GetAuditLogByIDV1**](AuditLogApi.md#GetAuditLogByIDV1) | **Get** /v1/audit-logs/{id} | Get audit log by ID
 [**GetAuditLogsV1**](AuditLogApi.md#GetAuditLogsV1) | **Get** /v1/audit-logs | Get audit logs
 
 
@@ -67,6 +68,76 @@ Name | Type | Description  | Notes
 
 - **Content-Type**: application/json
 - **Accept**: Not defined
+
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints)
+[[Back to Model list]](README.md#documentation-for-models)
+[[Back to README]](README.md)
+
+
+## GetAuditLogByIDV1
+
+> AuditLogDTO GetAuditLogByIDV1(ctx, id).Execute()
+
+Get audit log by ID
+
+
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    id := "id_example" // string | audit log ID
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.AuditLogApi.GetAuditLogByIDV1(context.Background(), id).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `AuditLogApi.GetAuditLogByIDV1``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `GetAuditLogByIDV1`: AuditLogDTO
+    fmt.Fprintf(os.Stdout, "Response from `AuditLogApi.GetAuditLogByIDV1`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**id** | **string** | audit log ID | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiGetAuditLogByIDV1Request struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+
+### Return type
+
+[**AuditLogDTO**](AuditLogDTO.md)
+
+### Authorization
+
+[BearerAuth](README.md#BearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints)
 [[Back to Model list]](README.md#documentation-for-models)

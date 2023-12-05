@@ -3,7 +3,7 @@ LogCom API
 
 LogCom Swagger documentation
 
-API version: 1.2.22
+API version: 1.2.23
 Contact: laborit@blutspende.de
 */
 
@@ -20,7 +20,7 @@ type AuditLogListPageResponse struct {
 	// The actual page number
 	CurrentPage *int32 `json:"currentPage,omitempty"`
 	// The items
-	Items []AuditLogDTO `json:"items,omitempty"`
+	Items []AuditLogSimpleDTO `json:"items,omitempty"`
 	// The number of items per page
 	PageSize *int32 `json:"pageSize,omitempty"`
 	// The total count of items
@@ -79,9 +79,9 @@ func (o *AuditLogListPageResponse) SetCurrentPage(v int32) {
 }
 
 // GetItems returns the Items field value if set, zero value otherwise.
-func (o *AuditLogListPageResponse) GetItems() []AuditLogDTO {
+func (o *AuditLogListPageResponse) GetItems() []AuditLogSimpleDTO {
 	if o == nil || isNil(o.Items) {
-		var ret []AuditLogDTO
+		var ret []AuditLogSimpleDTO
 		return ret
 	}
 	return o.Items
@@ -89,7 +89,7 @@ func (o *AuditLogListPageResponse) GetItems() []AuditLogDTO {
 
 // GetItemsOk returns a tuple with the Items field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *AuditLogListPageResponse) GetItemsOk() ([]AuditLogDTO, bool) {
+func (o *AuditLogListPageResponse) GetItemsOk() ([]AuditLogSimpleDTO, bool) {
 	if o == nil || isNil(o.Items) {
     return nil, false
 	}
@@ -105,8 +105,8 @@ func (o *AuditLogListPageResponse) HasItems() bool {
 	return false
 }
 
-// SetItems gets a reference to the given []AuditLogDTO and assigns it to the Items field.
-func (o *AuditLogListPageResponse) SetItems(v []AuditLogDTO) {
+// SetItems gets a reference to the given []AuditLogSimpleDTO and assigns it to the Items field.
+func (o *AuditLogListPageResponse) SetItems(v []AuditLogSimpleDTO) {
 	o.Items = v
 }
 

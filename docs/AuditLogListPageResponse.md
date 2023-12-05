@@ -5,7 +5,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **CurrentPage** | Pointer to **int32** | The actual page number | [optional] 
-**Items** | Pointer to [**[]AuditLogDTO**](AuditLogDTO.md) | The items | [optional] 
+**Items** | Pointer to [**[]AuditLogSimpleDTO**](AuditLogSimpleDTO.md) | The items | [optional] 
 **PageSize** | Pointer to **int32** | The number of items per page | [optional] 
 **TotalCount** | Pointer to **int32** | The total count of items | [optional] 
 **TotalPages** | Pointer to **int32** | The total pages | [optional] 
@@ -56,20 +56,20 @@ HasCurrentPage returns a boolean if a field has been set.
 
 ### GetItems
 
-`func (o *AuditLogListPageResponse) GetItems() []AuditLogDTO`
+`func (o *AuditLogListPageResponse) GetItems() []AuditLogSimpleDTO`
 
 GetItems returns the Items field if non-nil, zero value otherwise.
 
 ### GetItemsOk
 
-`func (o *AuditLogListPageResponse) GetItemsOk() (*[]AuditLogDTO, bool)`
+`func (o *AuditLogListPageResponse) GetItemsOk() (*[]AuditLogSimpleDTO, bool)`
 
 GetItemsOk returns a tuple with the Items field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetItems
 
-`func (o *AuditLogListPageResponse) SetItems(v []AuditLogDTO)`
+`func (o *AuditLogListPageResponse) SetItems(v []AuditLogSimpleDTO)`
 
 SetItems sets Items field to given value.
 

@@ -9,7 +9,7 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   title: LogCom API
-  version: 1.2.22
+  version: 1.2.23
 servers:
 - url: /api
 paths:
@@ -83,6 +83,41 @@ paths:
       security:
       - BearerAuth: []
       summary: Get audit logs
+      tags:
+      - AuditLog
+  /v1/audit-logs/{id}:
+    get:
+      description: Gets an audit log by ID
+      operationId: GetAuditLogByIDV1
+      parameters:
+      - description: audit log ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogDTO'
+          description: OK
+        "400":
+          content: {}
+          description: Bad request
+        "401":
+          content: {}
+          description: Unauthorized
+        "403":
+          content: {}
+          description: Forbidden
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Get audit log by ID
       tags:
       - AuditLog
   /v1/console-logs:
@@ -521,68 +556,22 @@ components:
         currentPage: 1
         totalCount: 69
         items:
-        - createdByName: createdByName
-          newValue: newValue
+        - createdAt: 2000-01-23T04:56:07.000+00:00
           subject: subject
-          message: message
-          createdAt: 2000-01-23T04:56:07.000+00:00
-          subjectPropertyName: subjectPropertyName
-          requestId: requestId
-          groupedChanges:
-          - newValue: newValue
-            subjectPropertyName: subjectPropertyName
-            subject: subject
-            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
-            oldValue: oldValue
-            category: category
-            message: message
-            subjectName: subjectName
-          - newValue: newValue
-            subjectPropertyName: subjectPropertyName
-            subject: subject
-            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
-            oldValue: oldValue
-            category: category
-            message: message
-            subjectName: subjectName
           id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
-          oldValue: oldValue
           category: category
+          message: message
           serviceAffected: serviceAffected
           createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
           serviceCreated: serviceCreated
-          subjectName: subjectName
-        - createdByName: createdByName
-          newValue: newValue
+        - createdAt: 2000-01-23T04:56:07.000+00:00
           subject: subject
-          message: message
-          createdAt: 2000-01-23T04:56:07.000+00:00
-          subjectPropertyName: subjectPropertyName
-          requestId: requestId
-          groupedChanges:
-          - newValue: newValue
-            subjectPropertyName: subjectPropertyName
-            subject: subject
-            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
-            oldValue: oldValue
-            category: category
-            message: message
-            subjectName: subjectName
-          - newValue: newValue
-            subjectPropertyName: subjectPropertyName
-            subject: subject
-            id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
-            oldValue: oldValue
-            category: category
-            message: message
-            subjectName: subjectName
           id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
-          oldValue: oldValue
           category: category
+          message: message
           serviceAffected: serviceAffected
           createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
           serviceCreated: serviceCreated
-          subjectName: subjectName
       properties:
         currentPage:
           description: The actual page number
@@ -591,7 +580,7 @@ components:
         items:
           description: The items
           items:
-            $ref: '#/components/schemas/AuditLogDTO'
+            $ref: '#/components/schemas/AuditLogSimpleDTO'
           type: array
         pageSize:
           description: The number of items per page
@@ -605,6 +594,45 @@ components:
           description: The total pages
           example: 2
           type: integer
+      type: object
+    AuditLogSimpleDTO:
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        subject: subject
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        category: category
+        message: message
+        serviceAffected: serviceAffected
+        createdById: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        serviceCreated: serviceCreated
+      properties:
+        category:
+          description: The category of the change
+          type: string
+        createdAt:
+          description: The creation timestamp
+          format: date-time
+          type: string
+        createdById:
+          description: The user's ID who created
+          format: uuid
+          type: string
+        id:
+          description: The ID
+          format: uuid
+          type: string
+        message:
+          description: The message
+          type: string
+        serviceAffected:
+          description: The service which the change affects
+          type: string
+        serviceCreated:
+          description: The service which created
+          type: string
+        subject:
+          description: The subject of the change
+          type: string
       type: object
     ConsoleLogDTO:
       example:
