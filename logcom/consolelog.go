@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DRK-Blutspende-BaWueHe/logcom-api"
+	"github.com/blutspende/logcom-api"
 	"github.com/google/uuid"
 )
 

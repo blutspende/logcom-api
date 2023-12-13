@@ -1,4 +1,4 @@
-module github.com/DRK-Blutspende-BaWueHe/logcom-api
+module github.com/blutspende/logcom-api
 
 go 1.18
 
