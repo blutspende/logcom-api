@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	logcomapi "github.com/DRK-Blutspende-BaWueHe/logcom-api"
+	logcomapi "github.com/blutspende/logcom-api"
 )
 
 func TestSendConsoleLogWithModel(t *testing.T) {

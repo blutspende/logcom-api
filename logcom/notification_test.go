@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	logcomapi "github.com/DRK-Blutspende-BaWueHe/logcom-api"
+	logcomapi "github.com/blutspende/logcom-api"
 )
 
 func TestSendAndLog(t *testing.T) {

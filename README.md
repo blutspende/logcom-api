@@ -23,7 +23,7 @@ The API documentation can be found [**here**](docs/README.md)
 ## Installation
 
 ```
-go get -v github.com/DRK-Blutspende-BaWueHe/logcom-api
+go get -v github.com/blutspende/logcom-api
 ```
 
 ## Usage
