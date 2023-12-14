@@ -1,9 +1,9 @@
-module github.com/DRK-Blutspende-BaWueHe/logcom-api
+module github.com/blutspende/logcom-api
 
 go 1.18
 
 require (
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	golang.org/x/oauth2 v0.15.0
 )
 

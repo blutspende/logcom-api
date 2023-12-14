@@ -9,7 +9,7 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   title: LogCom API
-  version: 1.2.24
+  version: 1.2.25
 servers:
 - url: /api
 paths:

@@ -3,7 +3,7 @@ LogCom API
 
 LogCom Swagger documentation
 
-API version: 1.2.24
+API version: 1.2.25
 Contact: laborit@blutspende.de
 */
 
@@ -102,7 +102,7 @@ type Configuration struct {
 func NewConfiguration() *Configuration {
 	cfg := &Configuration{
 		DefaultHeader:    make(map[string]string),
-		UserAgent:        "OpenAPI-Generator/1.2.24/go",
+		UserAgent:        "OpenAPI-Generator/1.2.25/go",
 		Debug:            false,
 		Servers:          ServerConfigurations{
 			{
