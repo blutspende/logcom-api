@@ -518,6 +518,10 @@ func (t *headerMiddleware) RoundTrip(r *http.Request) (*http.Response, error) {
 	requestCopy := r.Clone(r.Context())
 
 	for headerKey, headerValue := range configuration.HeaderProvider(requestCopy.Context()) {
+		if requestCopy.Header.Get(headerKey) != "" {
+			continue
+		}
+
 		for _, header := range headerValue {
 			requestCopy.Header.Add(headerKey, header)
 		}
