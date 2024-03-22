@@ -3,7 +3,7 @@ LogCom API
 
 LogCom Swagger documentation
 
-API version: 1.3.3
+API version: 1.3.4
 Contact: laborit@blutspende.de
 */
 
@@ -28,7 +28,7 @@ type ApiGetHealthV1Request struct {
 	ApiService *HealthApiService
 }
 
-func (r ApiGetHealthV1Request) Execute() (*HealthCheck, *http.Response, error) {
+func (r ApiGetHealthV1Request) Execute() (*HandlersHealthCheck, *http.Response, error) {
 	return r.ApiService.GetHealthV1Execute(r)
 }
 
@@ -48,13 +48,13 @@ func (a *HealthApiService) GetHealthV1(ctx context.Context) ApiGetHealthV1Reques
 }
 
 // Execute executes the request
-//  @return HealthCheck
-func (a *HealthApiService) GetHealthV1Execute(r ApiGetHealthV1Request) (*HealthCheck, *http.Response, error) {
+//  @return HandlersHealthCheck
+func (a *HealthApiService) GetHealthV1Execute(r ApiGetHealthV1Request) (*HandlersHealthCheck, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *HealthCheck
+		localVarReturnValue  *HandlersHealthCheck
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "HealthApiService.GetHealthV1")

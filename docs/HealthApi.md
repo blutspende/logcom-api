@@ -10,7 +10,7 @@ Method | HTTP request | Description
 
 ## GetHealthV1
 
-> HealthCheck GetHealthV1(ctx).Execute()
+> HandlersHealthCheck GetHealthV1(ctx).Execute()
 
 Service health check
 
@@ -37,7 +37,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `HealthApi.GetHealthV1``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetHealthV1`: HealthCheck
+    // response from `GetHealthV1`: HandlersHealthCheck
     fmt.Fprintf(os.Stdout, "Response from `HealthApi.GetHealthV1`: %v\n", resp)
 }
 ```
@@ -53,7 +53,7 @@ Other parameters are passed through a pointer to a apiGetHealthV1Request struct 
 
 ### Return type
 
-[**HealthCheck**](HealthCheck.md)
+[**HandlersHealthCheck**](HandlersHealthCheck.md)
 
 ### Authorization
 

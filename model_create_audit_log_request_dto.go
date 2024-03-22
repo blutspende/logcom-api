@@ -3,7 +3,7 @@ LogCom API
 
 LogCom Swagger documentation
 
-API version: 1.3.3
+API version: 1.3.4
 Contact: laborit@blutspende.de
 */
 

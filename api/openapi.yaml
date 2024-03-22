@@ -9,7 +9,7 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   title: LogCom API
-  version: 1.3.3
+  version: 1.3.4
 servers:
 - url: /api
 paths:
@@ -201,7 +201,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthCheck'
+                $ref: '#/components/schemas/handlers.HealthCheck'
           description: OK
       summary: Service health check
       tags:
@@ -916,23 +916,6 @@ components:
       - message
       - service
       type: object
-    HealthCheck:
-      example:
-        apiVersion:
-        - apiVersion
-        - apiVersion
-        service: service
-        status: status
-      properties:
-        apiVersion:
-          items:
-            type: string
-          type: array
-        service:
-          type: string
-        status:
-          type: string
-      type: object
     LogLevel:
       enum:
       - 0
@@ -1068,6 +1051,65 @@ components:
           description: The status of the message (only the "SEEN" status is supported)
           enum:
           - SEEN
+          type: string
+      type: object
+    handlers.HealthCheck:
+      example:
+        buildVersion: buildVersion
+        apiVersion:
+        - apiVersion
+        - apiVersion
+        service: service
+        memStats:
+          heapInUse: heapInUse
+          stackInUse: stackInUse
+          numberOfGoRoutines: 0
+          totalAlloc: totalAlloc
+          alloc: alloc
+          heapAlloc: heapAlloc
+          sys: sys
+        status: status
+      properties:
+        apiVersion:
+          description: The API version
+          items:
+            type: string
+          type: array
+        buildVersion:
+          description: Docker build version
+          type: string
+        memStats:
+          $ref: '#/components/schemas/handlers.MemStats'
+        service:
+          description: The service name
+          type: string
+        status:
+          description: The service status
+          type: string
+      type: object
+    handlers.MemStats:
+      example:
+        heapInUse: heapInUse
+        stackInUse: stackInUse
+        numberOfGoRoutines: 0
+        totalAlloc: totalAlloc
+        alloc: alloc
+        heapAlloc: heapAlloc
+        sys: sys
+      properties:
+        alloc:
+          type: string
+        heapAlloc:
+          type: string
+        heapInUse:
+          type: string
+        numberOfGoRoutines:
+          type: integer
+        stackInUse:
+          type: string
+        sys:
+          type: string
+        totalAlloc:
           type: string
       type: object
   securitySchemes:
