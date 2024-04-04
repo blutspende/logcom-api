@@ -230,6 +230,13 @@ func SendAuditLog(ctx context.Context, model logcomapi.CreateAuditLogRequestDTO)
 	return sendAuditLog(ctx, model)
 }
 
+func SendAuditLogBatch(ctx context.Context, models []logcomapi.CreateAuditLogRequestDTO) error {
+	if ctx == context.TODO() || ctx == context.Background() {
+		return errors.New("context cannot be empty")
+	}
+	return sendAuditLogs(ctx, models)
+}
+
 func SendAuditLogGroup(ctx context.Context, auditLogCollector *AuditLogCollector) error {
 	if ctx == context.TODO() || ctx == context.Background() {
 		return errors.New("context cannot be empty")
@@ -359,6 +366,28 @@ func sendAuditLog(ctx context.Context, model logcomapi.CreateAuditLogRequestDTO)
 	prepareAuditLogRequestDTO(&model)
 
 	result, err := apiClientInstance.AuditLogApi.CreateAuditLogV1Int(ctx).Model(model).Execute()
+	if err != nil {
+		return err
+	}
+
+	if !isHTTPStatusSuccess(result.StatusCode) {
+		return errors.New(result.Status)
+	}
+
+	return nil
+}
+
+func sendAuditLogs(ctx context.Context, models []logcomapi.CreateAuditLogRequestDTO) error {
+	if !IsEnabled() {
+		logInfo.Println("LogCom is disabled")
+		return nil
+	}
+
+	for i := range models {
+		prepareAuditLogRequestDTO(&models[i])
+	}
+
+	result, err := apiClientInstance.AuditLogApi.CreateAuditLogsV1Int(ctx).Model(models).Execute()
 	if err != nil {
 		return err
 	}
