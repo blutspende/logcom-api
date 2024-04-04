@@ -9,7 +9,7 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   title: LogCom API
-  version: 1.3.5
+  version: 1.3.6
 servers:
 - url: /api
 paths:
@@ -230,6 +230,35 @@ paths:
       security:
       - BearerAuth: []
       summary: Create audit log
+      tags:
+      - AuditLog
+      x-codegen-request-body-name: model
+  /v1/int/audit-logs/batch:
+    post:
+      description: Creates new audit logs
+      operationId: CreateAuditLogsV1Int
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                $ref: '#/components/schemas/CreateAuditLogRequestDTO'
+              type: array
+        description: The audit log DTOs
+        required: true
+      responses:
+        "204":
+          content: {}
+          description: No content
+        "400":
+          content: {}
+          description: Bad request
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Create audit logs
       tags:
       - AuditLog
       x-codegen-request-body-name: model
