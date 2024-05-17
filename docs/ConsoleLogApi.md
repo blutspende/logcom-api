@@ -4,14 +4,14 @@ All URIs are relative to */api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**CreateConsoleLogV1Int**](ConsoleLogApi.md#CreateConsoleLogV1Int) | **Post** /v1/int/console-logs | Create console log
+[**CreateConsoleLogV1**](ConsoleLogApi.md#CreateConsoleLogV1) | **Post** /v1/console-logs | Create console log
 [**GetConsoleLogsV1**](ConsoleLogApi.md#GetConsoleLogsV1) | **Get** /v1/console-logs | Get console logs
 
 
 
-## CreateConsoleLogV1Int
+## CreateConsoleLogV1
 
-> CreateConsoleLogV1Int(ctx).Model(model).Execute()
+> CreateConsoleLogV1(ctx).Model(model).Execute()
 
 Create console log
 
@@ -34,9 +34,9 @@ func main() {
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ConsoleLogApi.CreateConsoleLogV1Int(context.Background()).Model(model).Execute()
+    resp, r, err := apiClient.ConsoleLogApi.CreateConsoleLogV1(context.Background()).Model(model).Execute()
     if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ConsoleLogApi.CreateConsoleLogV1Int``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Error when calling `ConsoleLogApi.CreateConsoleLogV1``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
 }
@@ -48,7 +48,7 @@ func main() {
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiCreateConsoleLogV1IntRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiCreateConsoleLogV1Request struct via the builder pattern
 
 
 Name | Type | Description  | Notes

@@ -85,6 +85,61 @@ paths:
       summary: Get audit logs
       tags:
       - AuditLog
+    post:
+      description: Creates a new audit log
+      operationId: CreateAuditLogV1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuditLogRequestDTO'
+        description: The audit log DTO
+        required: true
+      responses:
+        "204":
+          content: {}
+          description: No content
+        "400":
+          content: {}
+          description: Bad request
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Create audit log
+      tags:
+      - AuditLog
+      x-codegen-request-body-name: model
+  /v1/audit-logs/batch:
+    post:
+      description: Creates new audit logs
+      operationId: CreateAuditLogsV1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                $ref: '#/components/schemas/CreateAuditLogRequestDTO'
+              type: array
+        description: The audit log DTOs
+        required: true
+      responses:
+        "204":
+          content: {}
+          description: No content
+        "400":
+          content: {}
+          description: Bad request
+        "500":
+          content: {}
+          description: Internal server error
+      security:
+      - BearerAuth: []
+      summary: Create audit logs
+      tags:
+      - AuditLog
+      x-codegen-request-body-name: model
   /v1/audit-logs/{id}:
     get:
       description: Gets an audit log by ID
@@ -192,80 +247,9 @@ paths:
       summary: Get console logs
       tags:
       - ConsoleLog
-  /v1/health:
-    get:
-      description: Shows if the service is running or not
-      operationId: GetHealthV1
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/handlers.HealthCheck'
-          description: OK
-      summary: Service health check
-      tags:
-      - Health
-  /v1/int/audit-logs:
-    post:
-      description: Creates a new audit log
-      operationId: CreateAuditLogV1Int
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateAuditLogRequestDTO'
-        description: The audit log DTO
-        required: true
-      responses:
-        "204":
-          content: {}
-          description: No content
-        "400":
-          content: {}
-          description: Bad request
-        "500":
-          content: {}
-          description: Internal server error
-      security:
-      - BearerAuth: []
-      summary: Create audit log
-      tags:
-      - AuditLog
-      x-codegen-request-body-name: model
-  /v1/int/audit-logs/batch:
-    post:
-      description: Creates new audit logs
-      operationId: CreateAuditLogsV1Int
-      requestBody:
-        content:
-          application/json:
-            schema:
-              items:
-                $ref: '#/components/schemas/CreateAuditLogRequestDTO'
-              type: array
-        description: The audit log DTOs
-        required: true
-      responses:
-        "204":
-          content: {}
-          description: No content
-        "400":
-          content: {}
-          description: Bad request
-        "500":
-          content: {}
-          description: Internal server error
-      security:
-      - BearerAuth: []
-      summary: Create audit logs
-      tags:
-      - AuditLog
-      x-codegen-request-body-name: model
-  /v1/int/console-logs:
     post:
       description: Creates a new console log
-      operationId: CreateConsoleLogV1Int
+      operationId: CreateConsoleLogV1
       requestBody:
         content:
           application/json:
@@ -289,6 +273,20 @@ paths:
       tags:
       - ConsoleLog
       x-codegen-request-body-name: model
+  /v1/health:
+    get:
+      description: Shows if the service is running or not
+      operationId: GetHealthV1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/handlers.HealthCheck'
+          description: OK
+      summary: Service health check
+      tags:
+      - Health
   /v1/notification-messages:
     get:
       description: Gets all notification message

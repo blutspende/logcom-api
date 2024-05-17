@@ -4,16 +4,16 @@ All URIs are relative to */api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**CreateAuditLogV1Int**](AuditLogApi.md#CreateAuditLogV1Int) | **Post** /v1/int/audit-logs | Create audit log
-[**CreateAuditLogsV1Int**](AuditLogApi.md#CreateAuditLogsV1Int) | **Post** /v1/int/audit-logs/batch | Create audit logs
+[**CreateAuditLogV1**](AuditLogApi.md#CreateAuditLogV1) | **Post** /v1/audit-logs | Create audit log
+[**CreateAuditLogsV1**](AuditLogApi.md#CreateAuditLogsV1) | **Post** /v1/audit-logs/batch | Create audit logs
 [**GetAuditLogByIDV1**](AuditLogApi.md#GetAuditLogByIDV1) | **Get** /v1/audit-logs/{id} | Get audit log by ID
 [**GetAuditLogsV1**](AuditLogApi.md#GetAuditLogsV1) | **Get** /v1/audit-logs | Get audit logs
 
 
 
-## CreateAuditLogV1Int
+## CreateAuditLogV1
 
-> CreateAuditLogV1Int(ctx).Model(model).Execute()
+> CreateAuditLogV1(ctx).Model(model).Execute()
 
 Create audit log
 
@@ -36,9 +36,9 @@ func main() {
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.AuditLogApi.CreateAuditLogV1Int(context.Background()).Model(model).Execute()
+    resp, r, err := apiClient.AuditLogApi.CreateAuditLogV1(context.Background()).Model(model).Execute()
     if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `AuditLogApi.CreateAuditLogV1Int``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Error when calling `AuditLogApi.CreateAuditLogV1``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
 }
@@ -50,7 +50,7 @@ func main() {
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiCreateAuditLogV1IntRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiCreateAuditLogV1Request struct via the builder pattern
 
 
 Name | Type | Description  | Notes
@@ -75,9 +75,9 @@ Name | Type | Description  | Notes
 [[Back to README]](README.md)
 
 
-## CreateAuditLogsV1Int
+## CreateAuditLogsV1
 
-> CreateAuditLogsV1Int(ctx).Model(model).Execute()
+> CreateAuditLogsV1(ctx).Model(model).Execute()
 
 Create audit logs
 
@@ -100,9 +100,9 @@ func main() {
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.AuditLogApi.CreateAuditLogsV1Int(context.Background()).Model(model).Execute()
+    resp, r, err := apiClient.AuditLogApi.CreateAuditLogsV1(context.Background()).Model(model).Execute()
     if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `AuditLogApi.CreateAuditLogsV1Int``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Error when calling `AuditLogApi.CreateAuditLogsV1``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
 }
@@ -114,7 +114,7 @@ func main() {
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiCreateAuditLogsV1IntRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiCreateAuditLogsV1Request struct via the builder pattern
 
 
 Name | Type | Description  | Notes

@@ -23,51 +23,51 @@ import (
 // ConsoleLogApiService ConsoleLogApi service
 type ConsoleLogApiService service
 
-type ApiCreateConsoleLogV1IntRequest struct {
+type ApiCreateConsoleLogV1Request struct {
 	ctx context.Context
 	ApiService *ConsoleLogApiService
 	model *CreateConsoleLogRequestDTO
 }
 
 // The console log DTO
-func (r ApiCreateConsoleLogV1IntRequest) Model(model CreateConsoleLogRequestDTO) ApiCreateConsoleLogV1IntRequest {
+func (r ApiCreateConsoleLogV1Request) Model(model CreateConsoleLogRequestDTO) ApiCreateConsoleLogV1Request {
 	r.model = &model
 	return r
 }
 
-func (r ApiCreateConsoleLogV1IntRequest) Execute() (*http.Response, error) {
-	return r.ApiService.CreateConsoleLogV1IntExecute(r)
+func (r ApiCreateConsoleLogV1Request) Execute() (*http.Response, error) {
+	return r.ApiService.CreateConsoleLogV1Execute(r)
 }
 
 /*
-CreateConsoleLogV1Int Create console log
+CreateConsoleLogV1 Create console log
 
 Creates a new console log
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiCreateConsoleLogV1IntRequest
+ @return ApiCreateConsoleLogV1Request
 */
-func (a *ConsoleLogApiService) CreateConsoleLogV1Int(ctx context.Context) ApiCreateConsoleLogV1IntRequest {
-	return ApiCreateConsoleLogV1IntRequest{
+func (a *ConsoleLogApiService) CreateConsoleLogV1(ctx context.Context) ApiCreateConsoleLogV1Request {
+	return ApiCreateConsoleLogV1Request{
 		ApiService: a,
 		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-func (a *ConsoleLogApiService) CreateConsoleLogV1IntExecute(r ApiCreateConsoleLogV1IntRequest) (*http.Response, error) {
+func (a *ConsoleLogApiService) CreateConsoleLogV1Execute(r ApiCreateConsoleLogV1Request) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ConsoleLogApiService.CreateConsoleLogV1Int")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ConsoleLogApiService.CreateConsoleLogV1")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/int/console-logs"
+	localVarPath := localBasePath + "/v1/console-logs"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}

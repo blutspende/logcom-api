@@ -24,51 +24,51 @@ import (
 // AuditLogApiService AuditLogApi service
 type AuditLogApiService service
 
-type ApiCreateAuditLogV1IntRequest struct {
+type ApiCreateAuditLogV1Request struct {
 	ctx context.Context
 	ApiService *AuditLogApiService
 	model *CreateAuditLogRequestDTO
 }
 
 // The audit log DTO
-func (r ApiCreateAuditLogV1IntRequest) Model(model CreateAuditLogRequestDTO) ApiCreateAuditLogV1IntRequest {
+func (r ApiCreateAuditLogV1Request) Model(model CreateAuditLogRequestDTO) ApiCreateAuditLogV1Request {
 	r.model = &model
 	return r
 }
 
-func (r ApiCreateAuditLogV1IntRequest) Execute() (*http.Response, error) {
-	return r.ApiService.CreateAuditLogV1IntExecute(r)
+func (r ApiCreateAuditLogV1Request) Execute() (*http.Response, error) {
+	return r.ApiService.CreateAuditLogV1Execute(r)
 }
 
 /*
-CreateAuditLogV1Int Create audit log
+CreateAuditLogV1 Create audit log
 
 Creates a new audit log
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiCreateAuditLogV1IntRequest
+ @return ApiCreateAuditLogV1Request
 */
-func (a *AuditLogApiService) CreateAuditLogV1Int(ctx context.Context) ApiCreateAuditLogV1IntRequest {
-	return ApiCreateAuditLogV1IntRequest{
+func (a *AuditLogApiService) CreateAuditLogV1(ctx context.Context) ApiCreateAuditLogV1Request {
+	return ApiCreateAuditLogV1Request{
 		ApiService: a,
 		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-func (a *AuditLogApiService) CreateAuditLogV1IntExecute(r ApiCreateAuditLogV1IntRequest) (*http.Response, error) {
+func (a *AuditLogApiService) CreateAuditLogV1Execute(r ApiCreateAuditLogV1Request) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "AuditLogApiService.CreateAuditLogV1Int")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "AuditLogApiService.CreateAuditLogV1")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/int/audit-logs"
+	localVarPath := localBasePath + "/v1/audit-logs"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -138,51 +138,51 @@ func (a *AuditLogApiService) CreateAuditLogV1IntExecute(r ApiCreateAuditLogV1Int
 	return localVarHTTPResponse, nil
 }
 
-type ApiCreateAuditLogsV1IntRequest struct {
+type ApiCreateAuditLogsV1Request struct {
 	ctx context.Context
 	ApiService *AuditLogApiService
 	model *[]CreateAuditLogRequestDTO
 }
 
 // The audit log DTOs
-func (r ApiCreateAuditLogsV1IntRequest) Model(model []CreateAuditLogRequestDTO) ApiCreateAuditLogsV1IntRequest {
+func (r ApiCreateAuditLogsV1Request) Model(model []CreateAuditLogRequestDTO) ApiCreateAuditLogsV1Request {
 	r.model = &model
 	return r
 }
 
-func (r ApiCreateAuditLogsV1IntRequest) Execute() (*http.Response, error) {
-	return r.ApiService.CreateAuditLogsV1IntExecute(r)
+func (r ApiCreateAuditLogsV1Request) Execute() (*http.Response, error) {
+	return r.ApiService.CreateAuditLogsV1Execute(r)
 }
 
 /*
-CreateAuditLogsV1Int Create audit logs
+CreateAuditLogsV1 Create audit logs
 
 Creates new audit logs
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiCreateAuditLogsV1IntRequest
+ @return ApiCreateAuditLogsV1Request
 */
-func (a *AuditLogApiService) CreateAuditLogsV1Int(ctx context.Context) ApiCreateAuditLogsV1IntRequest {
-	return ApiCreateAuditLogsV1IntRequest{
+func (a *AuditLogApiService) CreateAuditLogsV1(ctx context.Context) ApiCreateAuditLogsV1Request {
+	return ApiCreateAuditLogsV1Request{
 		ApiService: a,
 		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-func (a *AuditLogApiService) CreateAuditLogsV1IntExecute(r ApiCreateAuditLogsV1IntRequest) (*http.Response, error) {
+func (a *AuditLogApiService) CreateAuditLogsV1Execute(r ApiCreateAuditLogsV1Request) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "AuditLogApiService.CreateAuditLogsV1Int")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "AuditLogApiService.CreateAuditLogsV1")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/int/audit-logs/batch"
+	localVarPath := localBasePath + "/v1/audit-logs/batch"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
