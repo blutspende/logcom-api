@@ -274,7 +274,7 @@ func sendConsoleLogWithModel(ctx context.Context, model logcomapi.CreateConsoleL
 
 	prepareConsoleLogRequestDTO(&model)
 
-	result, err := apiClientInstance.ConsoleLogApi.CreateConsoleLogV1Int(ctx).Model(model).Execute()
+	result, err := apiClientInstance.ConsoleLogApi.CreateConsoleLogV1(ctx).Model(model).Execute()
 	if err != nil {
 		return err
 	}
@@ -365,7 +365,7 @@ func sendAuditLog(ctx context.Context, model logcomapi.CreateAuditLogRequestDTO)
 
 	prepareAuditLogRequestDTO(&model)
 
-	result, err := apiClientInstance.AuditLogApi.CreateAuditLogV1Int(ctx).Model(model).Execute()
+	result, err := apiClientInstance.AuditLogApi.CreateAuditLogV1(ctx).Model(model).Execute()
 	if err != nil {
 		return err
 	}
@@ -387,7 +387,7 @@ func sendAuditLogs(ctx context.Context, models []logcomapi.CreateAuditLogRequest
 		prepareAuditLogRequestDTO(&models[i])
 	}
 
-	result, err := apiClientInstance.AuditLogApi.CreateAuditLogsV1Int(ctx).Model(models).Execute()
+	result, err := apiClientInstance.AuditLogApi.CreateAuditLogsV1(ctx).Model(models).Execute()
 	if err != nil {
 		return err
 	}
