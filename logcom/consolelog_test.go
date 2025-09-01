@@ -24,10 +24,10 @@ func TestSend(t *testing.T) {
 			LogComURL:   svr.URL,
 		}
 		Init(config)
-		err := Log().
+		err := Log(ctx).
 			Level(logcomapi.Debug).
 			Message("Debug message").
-			WithContext(ctx).
+			Build().
 			Send()
 		if err != nil {
 			t.Errorf("expected no error")

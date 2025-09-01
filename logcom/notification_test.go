@@ -24,10 +24,10 @@ func TestSendAndLog(t *testing.T) {
 			LogComURL:   svr.URL,
 		}
 		Init(config)
-		err := Notify().
+		err := Notify(ctx).
 			Roles("test_role").
 			Message("Test notification").
-			WithContext(ctx).
+			Build().
 			AndLog(logcomapi.Debug, "Debug log").
 			Send()
 		if err != nil {

@@ -26,11 +26,11 @@ func TestSendAndNotifyAndLog(t *testing.T) {
 			LogComURL:   svr.URL,
 		}
 		Init(config)
-		err := Audit().
+		err := Audit(ctx).
 			Create("SUBJECT", "NAME", nil).
-			WithContext(ctx).
-			//WithTransactionID(uuid.New()).
-			//WithBearerAuthorization("BearerToken").
+			WithTransactionID(uuid.New()).
+			WithBearerAuthorization("BearerToken").
+			Build().
 			AndNotify().
 			Roles("test_role").
 			Message("Test notification").
