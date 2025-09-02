@@ -72,13 +72,19 @@ UseService2ServiceAuthorization()
 WithBearerAuthorization(bearerToken string)
 ```
 
+### Default Authorization
+
+If neither service-to-service authorization nor bearer token is explicitly provided, the client will automatically use the `Authorization` header from the request context. This is typically used when the request contains a user token that should be forwarded to LogCom.
+
+The `HeaderProvider` function (configured during client initialization) extracts the authorization header from the context and includes it in the LogCom API requests.
+
 ### Console logging
 
 #### One-shot sending
 
 Functions to use:
 
-- For simple message: `SendConsoleLog(ctx context.Context, logLevel Level, message string)`
+- For simple message: `SendConsoleLog(ctx context.Context, logLevel logcomapi.LogLevel, message string)`
 
     - `ctx`: The context which contains the `Authorization` key and its value
     - `logLevel`: The console log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3, Fatal=4, Panic=5)
@@ -87,10 +93,10 @@ Functions to use:
     Example:
 
     ```go
-    SendConsoleLog(ctx, zerolog.ErrorLevel, "Something went wrong")
+    logcom.SendConsoleLog(ctx, logcomapi.Error, "Something went wrong")
     ```
 
-- For more customized message: `SendConsoleLogWithModel(ctx context.Context, model logcomapi.CreateConsoleLogRequestDto)`
+- For more customized message: `SendConsoleLogWithModel(ctx context.Context, model logcomapi.CreateConsoleLogRequestDTO)`
 
     - `ctx`: The context which contains the `Authorization` key and its value
     - `model`: The data model
@@ -98,27 +104,27 @@ Functions to use:
     Example:
 
     ```go
-    SendConsoleLogWithModel(ctx, logcomapi.CreateConsoleLogRequestDto{
+    err := logcom.SendConsoleLogWithModel(ctx, logcomapi.CreateConsoleLogRequestDTO{
         CreatedAt:     nil,
         CreatedById:   nil,
         CreatedByName: "",
-        Level:         0,
-        Message:       "",
+        Level:         logcomapi.Error,
+        Message:       "Custom log message",
         Service:       "",
     })
     ```
 
 #### Builder based
 
-Function to use: `logcom.Log()`
+Function to use: `logcom.Log(ctx)`
 
 Example:
 
 ```go
-err := logcom.Log().
-	Level(logcom.DebugLevel).
-	Message("Debug log")
-    WithContext(ctx).
+err := logcom.Log(ctx).
+    Level(logcomapi.Debug).
+    Message("Debug log").
+    Build().
     Send()
 ```
 
@@ -149,14 +155,14 @@ ANTIG material was created successfully
 
 Functions to use:
 
-- `logcom.Audit().Create(subject, subjectName string, newValue interface{})`
-- `logcom.AuditCreation(subject, subjectName string, newValue interface{})`
+- `logcom.Audit(ctx).Create(subject, subjectName string, newValue interface{})`
+- `logcom.AuditCreation(ctx, subject, subjectName string, newValue interface{})`
 
 Example:
 
 ```go
-err := logcom.AuditCreation("MATERIAL", "ANTIG", newMaterialDTO).
-    WithContext(ctx).
+err := logcom.AuditCreation(ctx, "MATERIAL", "ANTIG", newMaterialDTO).
+    Build().
     OnComplete(func(err error) {
         if err != nil {
             _ = txConn.Rollback()
@@ -173,35 +179,35 @@ ANTIG material was created successfully
 
 #### Creation - Batched
 
-Function to use: `logcom.Audit().BatchCreate(subject string)`
+Function to use: `logcom.Audit(ctx).BatchCreate(subject string)`
 
 Example:
 
 ```go
-auditBatch := logcom.Audit().
-	BatchCreate("ORDER")
+auditBatch := logcom.Audit(ctx).
+    BatchCreate("ORDER")
 for _, order := range orders {
-    auditBatch.CreateItem(order.ID, order)	
+    auditBatch.CreateItem(order.ID, order)    
 }
-err := auditBatch.WithContext(ctx).
-    Send()
+err := auditBatch.Build().Send()
 ```
 
 #### Modification - OneShot sending
 
 Function to
-use: `SendAuditLogWithModification(ctx context.Context, subject, subjectName string, oldValue, newValue interface{})`
+use: `SendAuditLogWithModification(ctx context.Context, subject, subjectName string, oldValue, newValue interface{}, ignoredProperties ...string)`
 
 - `ctx`: The context which contains the `Authorization` key and its value
 - `subject`: The modified subject
 - `subjectName`: The unique identifier or name of the subject
 - `oldValue`: The original object
 - `newValue`: The modified object
+- `ignoredProperties`: Optional property names to ignore during comparison
 
 Example:
 
 ```go
-err := logcom.SendAuditLogWithModification(ctx, "MATERIAL", "ANTIG", originalMaterialDTO, updatedMaterialDTO)
+err := logcom.SendAuditLogWithModification(ctx, "MATERIAL", "ANTIG", originalMaterialDTO, updatedMaterialDTO, "modifiedBy", "modifiedAt")
 ```
 
 The translated result in Bloodlab-UI:
@@ -224,14 +230,14 @@ The translated result in Bloodlab-UI:
 
 Functions to use for builder initialization:
 
-1. `logcom.Audit().Modify(subject, subjectName string, oldValue, newValue interface{})`
-2. `logcom.AuditModification(subject, subjectName string, oldValue, newValue interface{})`
+1. `logcom.Audit(ctx).Modify(subject, subjectName string, oldValue, newValue interface{})`
+2. `logcom.AuditModification(ctx, subject, subjectName string, oldValue, newValue interface{})`
 
 Example:
 
 ```go
-err := logcom.AuditModification("MATERIAL", "ANTIG", originalMaterialDTO, updatedMaterialDTO).
-    WithContext(ctx).
+err := logcom.AuditModification(ctx, "MATERIAL", "ANTIG", originalMaterialDTO, updatedMaterialDTO).
+    Build().
     IgnoreChangeOf("modifiedBy", "modifiedAt").
     OnComplete(func (err error) {
         if err != nil {
@@ -259,16 +265,18 @@ The translated result in Bloodlab-UI:
 
 #### Modification - Batched
 
-Function to use: `logcom.Audit().BatchModify(subject string)`
+Function to use: `logcom.Audit(ctx).BatchModify(subject string)`
+
+- `ctx`: The context which contains the `Authorization` key and its value
 
 Example:
 
 ```go
-err := logcom.Audit().
+err := logcom.Audit(ctx).
     BatchModify("ORDER").
     CreateItem(newOrder.ID, newOrder).
     DeleteItem(deletedOrder.ID, deletedOrder).
-    WithContext(ctx).
+    Build().
     Send()
 ```
 
@@ -277,7 +285,7 @@ err := logcom.Audit().
 Consider the case of order modification which has basic information and samples with material. They are represented as
 separate objects at the end, but still they have to be audit-logged as one change.
 
-Function to use: `SendAuditLogGroup(ctx context.Context, auditLogCollector *AuditLogCollector)`
+Function to use: `logcom.Audit(ctx).GroupedModify(subject, subjectName string)`
 
 - `ctx`: The context which contains the `Authorization` key and its value
 - `auditLogCollector`: The collection which contains the individual changes belonging to the modified subject
@@ -285,7 +293,12 @@ Function to use: `SendAuditLogGroup(ctx context.Context, auditLogCollector *Audi
 Example:
 
 ```go
-err := logcom.SendAuditLogGroup(ctx, &auditLogCollector)
+err := logcom.Audit(ctx).
+    GroupedModify("ORDER", orderID).
+    AddCreation("SAMPLE", sampleID, newSample).
+    AddModification("ORDER", orderID, oldOrder, newOrder).
+    Build().
+    Send()
 ```
 
 #### Deletion - OneShot sending
@@ -313,14 +326,14 @@ ANTIG material was removed successfully
 
 Functions to use for builder initialization:
 
-1. `logcom.Audit().Delete(subject, subjectName string, oldValue)`
-2. `logcom.AuditDeletion(subject, subjectName string, oldValue interface{})`
+1. `logcom.Audit(ctx).Delete(subject, subjectName string, oldValue)`
+2. `logcom.AuditDeletion(ctx, subject, subjectName string, oldValue interface{})`
 
 Example:
 
 ```go
-err := logcom.AuditDeletion("MATERIAL", "ANTIG", deletedMaterialDTO).
-    WithContext(ctx).
+err := logcom.AuditDeletion(ctx, "MATERIAL", "ANTIG", deletedMaterialDTO).
+    Build().
     OnComplete(func(err error) {
         if err != nil {
             _ = txConn.Rollback()
@@ -337,17 +350,20 @@ ANTIG material was removed successfully
 
 #### Deletion - Batched
 
-Function to use: `logcom.Audit().BatchDelete(subject string)`
+Function to use: `logcom.Audit(ctx).BatchDelete(subject string)`
+
+- `ctx`: The context which contains the `Authorization` key and its value
 
 Example:
 
 ```go
-auditBatch := logcom.Audit().
-	BatchDelete("ORDER")
+auditBatch := logcom.Audit(ctx).
+    BatchDelete("ORDER")
 for _, order := range orders {
-    auditBatch.DeleteItem(order.ID, order)	
+    auditBatch.DeleteItem(order.ID, order)    
 }
-err := auditBatch.WithContext(ctx).
+err := auditBatch.UseService2ServiceAuthorization().
+    Build().
     Send()
 ```
 
@@ -355,30 +371,30 @@ err := auditBatch.WithContext(ctx).
 
 #### OneShot sending
 
-Function to use: `SendNotification(ctx context.Context, eventCategory string, message string, targets map[string][]string)`
+Function to use: `SendNotification(ctx context.Context, eventCategory logcomapi.NotificationEventCategory, message string, targets map[string][]string)`
 
 - `ctx`: The context which contains the `Authorization` key and its value
-- `eventCategory`: The category of the event (e.g. `NOTIFICATION`)
+- `eventCategory`: The category of the event (e.g. `logcomapi.Notification`)
 - `message`: The notification message
 - `targets`: The desired range of users / roles / sessions to whom the notification should be sent (Key: `ROLE`, `SESSION`, `USER`; Value: list of targets)
 
 Example:
 
 ```go
-err := logcom.SendNotification(ctx, "NOTIFICATION", "This is a notification for doctors", map[string][]string{"ROLE": {"doctor"}})
+err := logcom.SendNotification(ctx, logcomapi.Notification, "This is a notification for doctors", map[string][]string{"ROLE": {"doctor"}})
 ```
 
 #### Builder based
 
-Function to use: `logcom.Notify()`
+Function to use: `logcom.Notify(ctx)`
 
 Example:
 
 ```go
-err := logcom.Notify().
+err := logcom.Notify(ctx).
     Roles("doctor", "admin").
     Message("Test notification").
-    WithContext(ctx).
+    Build().
     Send()
 ```
 
@@ -387,16 +403,16 @@ err := logcom.Notify().
 ### Steps
 
 1. Initialization
-    - `logcom.Audit()`
-    - `logcom.AuditCreation(subject, subjectName string, newValue interface{})`
-    - `logcom.AuditModification(subject, subjectName string, oldValue, newValue interface{})`
-    - `logcom.AuditDeletion(subject, subjectName string, oldValue interface{})`
-    - `logcom.Notify()`
-    - `logcom.Log()`
+    - `logcom.Audit(ctx)`
+    - `logcom.AuditCreation(ctx, subject, subjectName string, newValue interface{})`
+    - `logcom.AuditModification(ctx, subject, subjectName string, oldValue, newValue interface{})`
+    - `logcom.AuditDeletion(ctx, subject, subjectName string, oldValue interface{})`
+    - `logcom.Notify(ctx)`
+    - `logcom.Log(ctx)`
 
 2. Initialization sub-actions
     1. Console Log
-        - `Level(level Level)`
+        - `Level(level logcomapi.LogLevel)`
         - `Message(message string)`
         - `MessageF(format string, params ...any)`
     2. Audit Log
@@ -408,12 +424,14 @@ err := logcom.Notify().
         - `BatchModify(subject string)`
             - `CreateItem(subjectName string, newValue interface{})`
             - `ModifyItem(subjectName string, oldValue, newValue interface{})`
+            - `ModifyItemWithModelChanges(subjectName string, changes []ModelChange)`
             - `DeleteItem(subjectName string, oldValue interface{})`
         - `BatchDelete(subject string)`
             - `DeleteItem(subjectName string, oldValue interface{})`
         - `GroupedModify(subject, subjectName string)`
             - `AddCreation(subject, subjectName string, newValue interface{})`
             - `AddModification(subject, subjectName string, oldValue, newValue interface{})`
+            - `AddModificationWithModelChanges(subject, subjectName string, changes []ModelChange)`
             - `AddDeletion(subject, subjectName string, oldValue interface{})`
     3. Notification
         - `Message(message string)`
@@ -424,8 +442,8 @@ err := logcom.Notify().
 3. Configuration
     - `UseService2ServiceAuthorization()`
     - `WithBearerAuthorization(bearerToken string)`
-    - `WithContext(ctx context.Context)`
     - `WithTransactionID(transactionID uuid.UUID)`
+    - `Build()` - builds the action from configuration
 
 4. Action
     1. Console Log
@@ -434,11 +452,11 @@ err := logcom.Notify().
     2. Audit Log
         - `IgnoreChangeOf(propertyNames ...string)`
         - `AndNotify()`
-        - `AndLog(logLevel zerolog.Level, message string)`
+        - `AndLog(logLevel logcomapi.LogLevel, message string)`
         - `OnComplete(onCompleteCallback func(error))`
         - `Send()`
     3. Notification
-        - `AndLog(logLevel zerolog.Level, message string)`
+        - `AndLog(logLevel logcomapi.LogLevel, message string)`
         - `OnComplete(onCompleteCallback func(error))`
         - `Send()`
 
@@ -466,37 +484,48 @@ err := logcom.Notify().
 - `oldValue`: The original object
 - `newValue`: The modified object
 
+`AddModificationWithModelChanges(subject, subjectName string, changes []ModelChange)`
+
+- Adds a modification change to the grouped audit log using model changes
+- `subject`: The modified subject
+- `subjectName`: The unique identifier or name of the subject
+- `changes`: List of property changes
+
 `AndNotify()`
 
 - Initializes a **Notification sub-action** as part of the audit log
 
-`AndLog(logLevel zerolog.Level, message string)`
+`AndLog(logLevel logcomapi.LogLevel, message string)`
 
 - Sets a *Console Log* action as part of the audit log and / or notification
 - `logLevel`: The console log level
 - `message`: The console log message
 
-`Audit()`
+`Audit(ctx)`
 
 - Initializes an audit log builder
+- `ctx`: The context
 
-`AuditCreation(subject, subjectName string, newValue interface{})`
+`AuditCreation(ctx, subject, subjectName string, newValue interface{})`
 
 - Initializes an audit log creation builder
+- `ctx`: The context
 - `subject`: The created subject
 - `subjectName`: The unique identifier or name of the subject
 - `newValue`: The created object. **Nullable**. Use `nil` when the created object data is not important
 
-`AuditDeletion(subject, subjectName string, oldValue interface{})`
+`AuditDeletion(ctx, subject, subjectName string, oldValue interface{})`
 
 - Initializes an audit log deletion builder
+- `ctx`: The context
 - `subject`: The deleted subject
 - `subjectName`: The unique identifier or name of the subject
 - `oldValue`: The deleted object. **Nullable**. Use `nil` when the deleted object data is not important
 
-`AuditModification(subject, subjectName string, oldValue, newValue interface{})`
+`AuditModification(ctx, subject, subjectName string, oldValue, newValue interface{})`
 
 - Initializes an audit log modification builder
+- `ctx`: The context
 - `subject`: The modified subject
 - `subjectName`: The unique identifier or name of the subject
 - `oldValue`: The original object
@@ -516,6 +545,10 @@ err := logcom.Notify().
 
 - Specifies the audit log operation (as batched modification)
 - `subject`: The main subject of the modified items
+
+`Build()`
+
+- Builds the action from the configuration
 
 `Create(subject, subjectName string, newValue interface{})`
 
@@ -541,7 +574,7 @@ err := logcom.Notify().
 
 - Adds a new deletion audit log to the initialized batch
 - `subjectName`: The unique identifier or name of the subject
-- `newValue`: The deleted object. **Nullable**. Use `nil` when the deleted object data is not important
+- `oldValue`: The deleted object. **Nullable**. Use `nil` when the deleted object data is not important
 
 `GroupedModify(subject, subjectName string)`
 
@@ -554,14 +587,15 @@ err := logcom.Notify().
 - Sets ignored properties of a subject for the modification operation
 - `propertyNames`: The ignored property names which are not considered as changes
 
-`Level(logLevel Level)`
+`Level(logLevel logcomapi.LogLevel)`
 
 - Sets the log level of the console log
-- `logLevel`: The console log level (Trace=-1, Debug=0, Info=1, Warning=2, Error=3, Fatal=4, Panic=5)
+- `logLevel`: The console log level
 
-`Log()`
+`Log(ctx)`
 
 - Initializes a console log builder
+- `ctx`: The context
 
 `Message(message string)`
 
@@ -586,11 +620,19 @@ err := logcom.Notify().
 
 - Adds a new modification audit log to the initialized batch
 - `subjectName`: The unique identifier or name of the subject
-- `newValue`: The modified object. **Nullable**. Use `nil` when the modified object data is not important
+- `oldValue`: The original object
+- `newValue`: The modified object
 
-`Notify()`
+`ModifyItemWithModelChanges(subjectName string, changes []ModelChange)`
+
+- Adds a new modification audit log to the initialized batch using model changes
+- `subjectName`: The unique identifier or name of the subject
+- `changes`: List of property changes
+
+`Notify(ctx)`
 
 - Initializes a notification builder
+- `ctx`: The context
 
 `OnComplete(onCompleteCallback func(error))`
 
@@ -624,11 +666,6 @@ err := logcom.Notify().
 
 - Sets the bearer JWT token for the request
 - `bearerToken`: The bearer token
-
-`WithContext(ctx context.Context)`
-
-- Sets the context for the request
-- `ctx`: The context which contains the `Authorization` key and its value
 
 `WithTransactionID(transactionID uuid.UUID)`
 
