@@ -16,10 +16,10 @@ type ConsoleLogAction interface {
 }
 
 type ConsoleLogConfiguration interface {
-	UseService2ServiceAuthorization() ConsoleLogAction
-	WithBearerAuthorization(bearerToken string) ConsoleLogAction
-	WithContext(ctx context.Context) ConsoleLogAction
+	UseService2ServiceAuthorization() ConsoleLogConfiguration
+	WithBearerAuthorization(bearerToken string) ConsoleLogConfiguration
 	WithTransactionID(transactionID uuid.UUID) ConsoleLogConfiguration
+	Build() ConsoleLogAction
 }
 
 type ConsoleLogOperation interface {
@@ -35,9 +35,9 @@ type consoleLog struct {
 	onCompleteCallback func(error)
 }
 
-func Log() ConsoleLogOperation {
+func Log(ctx context.Context) ConsoleLogOperation {
 	return &consoleLog{
-		ctx:                context.TODO(),
+		ctx:                ctx,
 		logLevel:           logcomapi.Warning,
 		onCompleteCallback: func(error) {},
 	}
@@ -72,7 +72,7 @@ func (cl *consoleLog) MessageF(format string, params ...any) ConsoleLogConfigura
 	return cl
 }
 
-func (cl *consoleLog) UseService2ServiceAuthorization() ConsoleLogAction {
+func (cl *consoleLog) UseService2ServiceAuthorization() ConsoleLogConfiguration {
 	if configuration.ClientCredentialProvider == nil {
 		logFatal.Println("Client credential provider must be set")
 		return cl
@@ -87,7 +87,7 @@ func (cl *consoleLog) UseService2ServiceAuthorization() ConsoleLogAction {
 	return cl.WithBearerAuthorization(clientCredential)
 }
 
-func (cl *consoleLog) WithBearerAuthorization(bearerToken string) ConsoleLogAction {
+func (cl *consoleLog) WithBearerAuthorization(bearerToken string) ConsoleLogConfiguration {
 	if !strings.HasPrefix(bearerToken, "Bearer ") {
 		bearerToken = "Bearer " + bearerToken
 	}
@@ -95,13 +95,12 @@ func (cl *consoleLog) WithBearerAuthorization(bearerToken string) ConsoleLogActi
 	return cl
 }
 
-func (cl *consoleLog) WithContext(ctx context.Context) ConsoleLogAction {
-	cl.ctx = ctx
+func (cl *consoleLog) WithTransactionID(transactionID uuid.UUID) ConsoleLogConfiguration {
+	cl.ctx = context.WithValue(cl.ctx, "RequestID", transactionID.String())
 	return cl
 }
 
-func (cl *consoleLog) WithTransactionID(transactionID uuid.UUID) ConsoleLogConfiguration {
-	cl.ctx = context.WithValue(cl.ctx, "RequestID", transactionID.String())
+func (cl *consoleLog) Build() ConsoleLogAction {
 	return cl
 }
 

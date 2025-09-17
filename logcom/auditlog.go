@@ -34,10 +34,10 @@ type AuditLogAction interface {
 }
 
 type AuditLogConfiguration interface {
-	UseService2ServiceAuthorization() AuditLogAction
-	WithBearerAuthorization(bearerToken string) AuditLogAction
-	WithContext(ctx context.Context) AuditLogAction
+	UseService2ServiceAuthorization() AuditLogConfiguration
+	WithBearerAuthorization(bearerToken string) AuditLogConfiguration
 	WithTransactionID(transactionID uuid.UUID) AuditLogConfiguration
+	Build() AuditLogAction
 }
 
 type AuditLogOperation interface {
@@ -95,38 +95,44 @@ type auditLog[T any] struct {
 	onCompleteCallback func(error)
 }
 
-func Audit() AuditLogOperation {
+func Audit(ctx context.Context) AuditLogOperation {
 	return &auditLog[AuditLogAction]{
-		ctx:                context.TODO(),
+		ctx:                ctx,
 		onCompleteCallback: func(error) {},
 	}
 }
 
-func AuditCreation(subject, subjectName string, newValue interface{}) AuditLogConfiguration {
+func AuditCreation(ctx context.Context, subject, subjectName string, newValue interface{}) AuditLogConfiguration {
 	return &auditLog[AuditLogAction]{
-		operation:   "CREATION",
-		newValue:    newValue,
-		subject:     subject,
-		subjectName: subjectName,
+		ctx:                ctx,
+		operation:          "CREATION",
+		newValue:           newValue,
+		subject:            subject,
+		subjectName:        subjectName,
+		onCompleteCallback: func(error) {},
 	}
 }
 
-func AuditModification(subject, subjectName string, oldValue, newValue interface{}) AuditLogConfiguration {
+func AuditModification(ctx context.Context, subject, subjectName string, oldValue, newValue interface{}) AuditLogConfiguration {
 	return &auditLog[AuditLogAction]{
-		operation:   "MODIFICATION",
-		oldValue:    oldValue,
-		newValue:    newValue,
-		subject:     subject,
-		subjectName: subjectName,
+		ctx:                ctx,
+		operation:          "MODIFICATION",
+		oldValue:           oldValue,
+		newValue:           newValue,
+		subject:            subject,
+		subjectName:        subjectName,
+		onCompleteCallback: func(error) {},
 	}
 }
 
-func AuditDeletion(subject, subjectName string, oldValue interface{}) AuditLogConfiguration {
+func AuditDeletion(ctx context.Context, subject, subjectName string, oldValue interface{}) AuditLogConfiguration {
 	return &auditLog[AuditLogAction]{
-		operation:   "DELETION",
-		oldValue:    oldValue,
-		subject:     subject,
-		subjectName: subjectName,
+		ctx:                ctx,
+		operation:          "DELETION",
+		oldValue:           oldValue,
+		subject:            subject,
+		subjectName:        subjectName,
+		onCompleteCallback: func(error) {},
 	}
 }
 
@@ -284,7 +290,7 @@ func (al *auditLog[T]) AndLog(logLevel logcomapi.LogLevel, message string) Audit
 	return al
 }
 
-func (al *auditLog[T]) UseService2ServiceAuthorization() AuditLogAction {
+func (al *auditLog[T]) UseService2ServiceAuthorization() AuditLogConfiguration {
 	if configuration.ClientCredentialProvider == nil {
 		logFatal.Println("Client credential provider must be set")
 		return al
@@ -299,7 +305,7 @@ func (al *auditLog[T]) UseService2ServiceAuthorization() AuditLogAction {
 	return al.WithBearerAuthorization(clientCredential)
 }
 
-func (al *auditLog[T]) WithBearerAuthorization(bearerToken string) AuditLogAction {
+func (al *auditLog[T]) WithBearerAuthorization(bearerToken string) AuditLogConfiguration {
 	if !strings.HasPrefix(bearerToken, "Bearer ") {
 		bearerToken = "Bearer " + bearerToken
 	}
@@ -307,13 +313,12 @@ func (al *auditLog[T]) WithBearerAuthorization(bearerToken string) AuditLogActio
 	return al
 }
 
-func (al *auditLog[T]) WithContext(ctx context.Context) AuditLogAction {
-	al.ctx = ctx
+func (al *auditLog[T]) WithTransactionID(transactionID uuid.UUID) AuditLogConfiguration {
+	al.ctx = context.WithValue(al.ctx, "RequestID", transactionID.String())
 	return al
 }
 
-func (al *auditLog[T]) WithTransactionID(transactionID uuid.UUID) AuditLogConfiguration {
-	al.ctx = context.WithValue(al.ctx, "RequestID", transactionID.String())
+func (al *auditLog[T]) Build() AuditLogAction {
 	return al
 }
 

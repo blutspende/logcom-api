@@ -16,10 +16,10 @@ type NotificationAction interface {
 }
 
 type NotificationConfiguration interface {
-	UseService2ServiceAuthorization() NotificationAction
-	WithBearerAuthorization(bearerToken string) NotificationAction
-	WithContext(ctx context.Context) NotificationAction
+	UseService2ServiceAuthorization() NotificationConfiguration
+	WithBearerAuthorization(bearerToken string) NotificationConfiguration
 	WithTransactionID(transactionID uuid.UUID) NotificationConfiguration
+	Build() NotificationAction
 }
 
 type NotificationOperation[T any] interface {
@@ -42,10 +42,10 @@ type notification[T any] struct {
 	onCompleteCallback func(error)
 }
 
-func Notify() NotificationOperation[NotificationConfiguration] {
+func Notify(ctx context.Context) NotificationOperation[NotificationConfiguration] {
 	return &notification[NotificationConfiguration]{
 		eventCategory:      logcomapi.Notification,
-		ctx:                context.TODO(),
+		ctx:                ctx,
 		onCompleteCallback: func(error) {},
 	}
 }
@@ -99,7 +99,7 @@ func (n *notification[T]) Send() error {
 	return nil
 }
 
-func (n *notification[T]) UseService2ServiceAuthorization() NotificationAction {
+func (n *notification[T]) UseService2ServiceAuthorization() NotificationConfiguration {
 	if configuration.ClientCredentialProvider == nil {
 		logFatal.Println("Client credential provider must be set")
 		return n
@@ -114,7 +114,7 @@ func (n *notification[T]) UseService2ServiceAuthorization() NotificationAction {
 	return n.WithBearerAuthorization(clientCredential)
 }
 
-func (n *notification[T]) WithBearerAuthorization(bearerToken string) NotificationAction {
+func (n *notification[T]) WithBearerAuthorization(bearerToken string) NotificationConfiguration {
 	if !strings.HasPrefix(bearerToken, "Bearer ") {
 		bearerToken = "Bearer " + bearerToken
 	}
@@ -122,13 +122,12 @@ func (n *notification[T]) WithBearerAuthorization(bearerToken string) Notificati
 	return n
 }
 
-func (n *notification[T]) WithContext(ctx context.Context) NotificationAction {
-	n.ctx = ctx
+func (n *notification[T]) WithTransactionID(transactionID uuid.UUID) NotificationConfiguration {
+	n.ctx = context.WithValue(n.ctx, "RequestID", transactionID.String())
 	return n
 }
 
-func (n *notification[T]) WithTransactionID(transactionID uuid.UUID) NotificationConfiguration {
-	n.ctx = context.WithValue(n.ctx, "RequestID", transactionID.String())
+func (n *notification[T]) Build() NotificationAction {
 	return n
 }
 
