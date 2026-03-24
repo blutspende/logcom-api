@@ -56,15 +56,13 @@ func prepareNotificationRequestDTO(dto *logcomapi.CreateNotificationRequestDTO) 
 	}
 
 	if dto.EventCategory == nil {
-		dto.EventCategory = toPtr(logcomapi.Notification)
+		dto.EventCategory = new(logcomapi.Notification)
 	}
 
 	if dto.CreatedAt != nil {
-		utcNow := dto.CreatedAt.UTC()
-		dto.CreatedAt = &utcNow
+		dto.CreatedAt = new(dto.CreatedAt.UTC())
 	} else {
-		utcNow := time.Now().UTC()
-		dto.CreatedAt = &utcNow
+		dto.CreatedAt = new(time.Now().UTC())
 	}
 }
 
@@ -153,7 +151,7 @@ func (n *notification[T]) Message(message string) T {
 
 func (n *notification[T]) transformToNotificationTargets(targetType string, targets ...string) {
 	if n.targets == nil {
-		n.targets = make(map[string][]string, 0)
+		n.targets = make(map[string][]string)
 	}
 
 	n.targets[targetType] = make([]string, len(targets))
