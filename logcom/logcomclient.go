@@ -45,30 +45,30 @@ type Configuration struct {
 	ClientCredentialProvider ClientCredentialProvider
 }
 
-func init() {
-	logFormat := &logFormat{
+func Init(config Configuration) {
+	format := &logFormat{
 		message: "timestamp level file [LogCom] > message",
 		time:    "2006-01-02T15:04:05Z07:00",
 	}
 
 	infoHandle := logWriter{
 		writer:    os.Stdout,
-		logFormat: logFormat,
+		logFormat: format,
 		level:     "INFO",
 	}
 	warningHandle := logWriter{
 		writer:    os.Stdout,
-		logFormat: logFormat,
+		logFormat: format,
 		level:     "WARN",
 	}
 	errorHandle := logWriter{
 		writer:    os.Stderr,
-		logFormat: logFormat,
+		logFormat: format,
 		level:     "ERR",
 	}
 	fatalHandle := logWriter{
 		writer:    os.Stderr,
-		logFormat: logFormat,
+		logFormat: format,
 		level:     "FTL",
 	}
 
@@ -77,51 +77,6 @@ func init() {
 	logError = log.New(errorHandle, "", 0)
 	logFatal = log.New(fatalHandle, "", 0)
 
-	logcomURL := os.Getenv("LOG_COM_URL")
-
-	config := Configuration{
-		ServiceName: "Unknown",
-		LogComURL:   logcomURL,
-		HeaderProvider: func(ctx context.Context) http.Header {
-			return http.Header{}
-		},
-	}
-
-	configuration = config
-
-	logcomAPIConfig := logcomapi.NewConfiguration()
-	logcomAPIConfig.Servers = logcomapi.ServerConfigurations{
-		{
-			URL:         configuration.LogComURL + logcomAPIConfig.Servers[0].URL,
-			Description: logcomAPIConfig.Servers[0].Description,
-			Variables:   logcomAPIConfig.Servers[0].Variables,
-		},
-	}
-
-	parsedUrl, err := url.Parse(configuration.LogComURL)
-	if err != nil {
-		logError.Printf("Failed to get LogCom URL scheme, falling back to default (%s): %v\n", "https", err)
-
-		parsedUrl = &url.URL{
-			Scheme: "https",
-		}
-	}
-
-	logcomAPIConfig.Scheme = parsedUrl.Scheme
-
-	if logcomURL == "" {
-		logError.Println("LogCom URL is missing thus functionalities are not available")
-		return
-	}
-
-	apiClientInstance = logcomapi.NewAPIClient(logcomAPIConfig)
-
-	apiClientInstance.GetConfig().HTTPClient.Transport = &headerMiddleware{
-		originalRoundTripper: apiClientInstance.GetConfig().HTTPClient.Transport,
-	}
-}
-
-func Init(config Configuration) {
 	if config.LogComURL == "" {
 		config.LogComURL = os.Getenv("LOG_COM_URL")
 		if config.LogComURL == "" {
@@ -130,19 +85,15 @@ func Init(config Configuration) {
 		}
 	}
 
+	configuration = config
+
 	once.Do(func() {
 		configuration.LogComURL = config.LogComURL
 
-		if config.ServiceName != "" {
-			configuration.ServiceName = config.ServiceName
-		}
-
-		if config.HeaderProvider != nil {
-			configuration.HeaderProvider = config.HeaderProvider
-		}
-
-		if config.ClientCredentialProvider != nil {
-			configuration.ClientCredentialProvider = config.ClientCredentialProvider
+		if configuration.HeaderProvider == nil {
+			configuration.HeaderProvider = func(ctx context.Context) http.Header {
+				return http.Header{}
+			}
 		}
 
 		logcomAPIConfig := logcomapi.NewConfiguration()
