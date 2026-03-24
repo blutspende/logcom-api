@@ -219,7 +219,11 @@ func sendConsoleLog(ctx context.Context, logLevel logcomapi.LogLevel, message st
 
 func sendConsoleLogWithModel(ctx context.Context, model logcomapi.CreateConsoleLogRequestDTO) error {
 	if !IsEnabled() {
-		logInfo.Println("LogCom is disabled")
+		if logInfo != nil {
+			logInfo.Println("LogCom is disabled")
+		} else {
+			_, _ = fmt.Fprintln(os.Stdout, "LogCom is disabled")
+		}
 		return nil
 	}
 
@@ -310,7 +314,11 @@ func sendAuditLogWithDeletion(ctx context.Context, subject, subjectName string, 
 
 func sendAuditLog(ctx context.Context, model logcomapi.CreateAuditLogRequestDTO) error {
 	if !IsEnabled() {
-		logInfo.Println("LogCom is disabled")
+		if logInfo != nil {
+			logInfo.Println("LogCom is disabled")
+		} else {
+			_, _ = fmt.Fprintln(os.Stdout, "LogCom is disabled")
+		}
 		return nil
 	}
 
@@ -330,7 +338,11 @@ func sendAuditLog(ctx context.Context, model logcomapi.CreateAuditLogRequestDTO)
 
 func sendAuditLogs(ctx context.Context, models []logcomapi.CreateAuditLogRequestDTO) error {
 	if !IsEnabled() {
-		logInfo.Println("LogCom is disabled")
+		if logInfo != nil {
+			logInfo.Println("LogCom is disabled")
+		} else {
+			_, _ = fmt.Fprintln(os.Stdout, "LogCom is disabled")
+		}
 		return nil
 	}
 
@@ -370,7 +382,11 @@ func sendNotification(ctx context.Context, eventCategory logcomapi.NotificationE
 
 func sendNotificationWithModel(ctx context.Context, model logcomapi.CreateNotificationRequestDTO) error {
 	if !IsEnabled() {
-		logInfo.Println("LogCom is disabled")
+		if logInfo != nil {
+			logInfo.Println("LogCom is disabled")
+		} else {
+			_, _ = fmt.Fprintln(os.Stdout, "LogCom is disabled")
+		}
 		return nil
 	}
 
