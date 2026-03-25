@@ -142,20 +142,20 @@ func NewAuditLogCollector(parentSubject, parentSubjectName string) *AuditLogColl
 			Subject:     parentSubject,
 			SubjectName: &parentSubjectName,
 		},
-		auditLogs: make(map[string]map[string][]logcomapi.CreateAuditLogRequestDTO, 0),
+		auditLogs: make(map[string]map[string][]logcomapi.CreateAuditLogRequestDTO),
 	}
 }
 
 func NewAuditLogCollectorWithParent(parentAuditLog logcomapi.CreateAuditLogRequestDTO) *AuditLogCollector {
 	return &AuditLogCollector{
 		parentAuditLog: parentAuditLog,
-		auditLogs:      make(map[string]map[string][]logcomapi.CreateAuditLogRequestDTO, 0),
+		auditLogs:      make(map[string]map[string][]logcomapi.CreateAuditLogRequestDTO),
 	}
 }
 
 func newAuditLogCollector() *AuditLogCollector {
 	return &AuditLogCollector{
-		auditLogs: make(map[string]map[string][]logcomapi.CreateAuditLogRequestDTO, 0),
+		auditLogs: make(map[string]map[string][]logcomapi.CreateAuditLogRequestDTO),
 	}
 }
 
@@ -266,7 +266,7 @@ func (al *auditLog[T]) BatchDelete(subject string) BatchedAuditLogOperation {
 }
 
 func (al *auditLog[T]) GroupedModify(subject, subjectName string) GroupedModificationAuditLogOperation {
-	al.batchedAuditLogMap = make(map[int]*AuditLogCollector, 0)
+	al.batchedAuditLogMap = make(map[int]*AuditLogCollector)
 	al.batchedAuditLogMap[batchedSubjectModification] = NewAuditLogCollector(subject, subjectName)
 	return al
 }
@@ -471,7 +471,7 @@ func (al *auditLog[T]) Message(message string) T {
 
 func (al *auditLog[T]) ensureBatchedAuditLogs(batchType int) {
 	if _, ok := al.batchedAuditLogMap[batchType]; !ok {
-		al.batchedAuditLogMap = make(map[int]*AuditLogCollector, 0)
+		al.batchedAuditLogMap = make(map[int]*AuditLogCollector)
 		al.batchedAuditLogMap[batchType] = newAuditLogCollector()
 	}
 }
